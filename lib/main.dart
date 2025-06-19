@@ -20,7 +20,7 @@ class _MyAppState extends State<MyApp> {
         title: Text('Hello World'),
       ),
       body: Center(
-        child: Text('Hello World'),
+        child: Image.asset("assets/1.jpg")
       ),
     );
   }
