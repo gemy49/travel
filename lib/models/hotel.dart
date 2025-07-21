@@ -1,26 +1,38 @@
-class Hotel {
-  final String name;
-  final String city;
-  final double price;
+import 'dart:convert';
+import 'package:flutter/material.dart';
 
-  Hotel({required this.name, required this.city, required this.price});
+class Hotel {
+  final int id;
+  final String city;
+  final String name;
+  final double price;
+  final int availableRooms;
+
+  Hotel({
+    required this.id,
+    required this.city,
+    required this.name,
+    required this.price,
+    required this.availableRooms,
+  });
 
   factory Hotel.fromJson(Map<String, dynamic> json) {
-    final property = json['property'];
-
     return Hotel(
-      name: property['name'] ?? 'Unknown Hotel',
-      city: property['location']['city']['name'] ?? 'Unknown City',
-      price:
-          double.tryParse(
-            property['priceBreakdown']?['grossPrice']?['value'].toString() ??
-                '0',
-          ) ??
-          0,
+      id: json['id'],
+      city: json['city'],
+      name: json['name'],
+      price: json['price'].toDouble(),
+      availableRooms: json['availableRooms'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'city': city, 'price': price};
+    return {
+      'id': id,
+      'city': city,
+      'name': name,
+      'price': price,
+      'availableRooms': availableRooms,
+    };
   }
 }

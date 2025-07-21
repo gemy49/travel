@@ -21,36 +21,41 @@
 //     );
 //   }
 // }
-//===================================================================
+
+//=================================================================
+
+// ملف: lib/main.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'pages/flight_search_page.dart';
-import 'providers/booking_provider.dart';
+// Providers
+import 'providers/flight_provider.dart';
+import 'providers/hotel_provider.dart';
+import 'providers/place_provider.dart';
+
+// Screens
+import 'screens/home_screen.dart';
 
 void main() {
-  runApp(const TravelApp());
+  runApp(const MyApp());
 }
 
-class TravelApp extends StatelessWidget {
-  const TravelApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => BookingProvider(),
-      child: MaterialApp(
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => FlightProvider()),
+        ChangeNotifierProvider(create: (_) => HotelProvider()),
+        ChangeNotifierProvider(create: (_) => PlaceProvider()),
+      ],
+      child: const MaterialApp(
+        title: 'Travel Booking App',
+        home: HomeScreen(),
         debugShowCheckedModeBanner: false,
-        title: 'Travel Booking',
-        theme: ThemeData(
-          primarySwatch: Colors.indigo,
-          scaffoldBackgroundColor: Colors.grey[100],
-          inputDecorationTheme: const InputDecorationTheme(
-            border: OutlineInputBorder(),
-          ),
-        ),
-        home: const FlightSearchPage(),
       ),
     );
   }
