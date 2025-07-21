@@ -1,5 +1,8 @@
 import 'package:FlyHigh/pages/HowAreWe.dart';
 import 'package:FlyHigh/pages/public_places.dart';
+import 'package:FlyHigh/screens/flights/flights_screen.dart';
+import 'package:FlyHigh/screens/hotels/hotels_screen.dart';
+import 'package:FlyHigh/screens/saved/saved_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:FlyHigh/pages/homeScreen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -171,49 +174,9 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
           body:
           <Widget>[
             HomeScreen(),
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Column(
-                children: <Widget>[
-                  Card(
-                    child: ListTile(
-                      leading: Icon(Icons.notifications_sharp),
-                      title: Text('Notification 2'),
-                      subtitle: Text('This is a notification'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Column(
-                children: <Widget>[
-                  Card(
-                    child: ListTile(
-                      leading: Icon(Icons.notifications_sharp),
-                      title: Text('Notification 3'),
-                      subtitle: Text('This is a notification'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Column(
-                children: <Widget>[
-                  Card(
-                    child: ListTile(
-                      leading: Icon(Icons.notifications_sharp),
-                      title: Text('Notification 4'),
-                      subtitle: Text('This is a notification'),
-                    ),
-                  ),
-
-                ],
-              ),
-            ),
+            const FlightsScreen(),
+            const HotelsScreen(city: "Dubai"),
+            const SavedScreen(),
             const Padding(
               padding: EdgeInsets.all(8.0),
               child: Column(
