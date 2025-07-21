@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "674268025260",
+    "project_id": "graduation-project-368eb",
+    "storage_bucket": "graduation-project-368eb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674268025260:android:cb9c2cce7a9501c5a4ea09",
+        "android_client_info": {
+          "package_name": "com.example.travel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAr2OOYSFWFuiStUNVh1___vy2c7OIfFic"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

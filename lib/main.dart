@@ -1,28 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:FlyHigh/BottomNavigationBar.dart';
+import 'package:FlyHigh/pages/loginScreen.dart';
+import 'package:FlyHigh/pages/signUpScreen.dart';
+import 'package:FlyHigh/pages/splashScreen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(MaterialApp(home: MyApp()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  // This widget is the root of your application.
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Hello World'),
-      ),
-      body: Center(
-        child: Image.asset("assets/1.jpg")
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/Login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignUp(),
+        '/BottomNavigationBar': (context) => const Bottomnavigationbar(),
+
+      },
     );
   }
 }
-
