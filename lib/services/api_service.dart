@@ -1,8 +1,9 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../models/city.dart';
 import '../models/flight.dart';
 import '../models/hotel.dart';
-import '../models/place.dart';
+import '../models/weather.dart';
 
 class ApiService {
   final String baseUrl = 'http://192.168.1.100:3000/api';
@@ -12,20 +13,18 @@ class ApiService {
     String? from,
     String? to,
     String? date,
+    String? returnDate,
   }) async {
     var url = Uri.parse('$baseUrl/flights');
-    if (from != null || to != null || date != null) {
+    if (from != null || to != null || date != null || returnDate != null) {
       url = Uri.parse('$baseUrl/flights?from=$from&to=$to&date=$date');
     }
     final response = await http.get(url);
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Flight.fromJson(json)).toList();
-      print("Loaded flights---------------------------------");
-
     } else {
       throw Exception('Failed to load flights');
-      print("Failed to load flights-----------------------------------");
     }
   }
 
@@ -74,6 +73,30 @@ class ApiService {
       return data.map((json) => Place.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load places');
+    }
+  }
+  Future<List<City>> getCities() async {
+    final response = await http.get(Uri.parse('$baseUrl/places'));
+
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((json) => City.fromJson(json)).toList();
+    } else {
+      throw Exception('فشل تحميل المدن');
+    }
+  }
+
+  // Weather Forecast
+  Future<WeatherResponse> getWeatherForecast(String city) async {
+    final apiKey = 'fe929c8b878144e880e225611231508';
+    final url = Uri.parse('https://api.weatherapi.com/v1/forecast.json?key=$apiKey&q=$city&days=3&aqi=no&alerts=no');
+
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return WeatherResponse.fromJson(data);
+    } else {
+      throw Exception('Failed to load weather data');
     }
   }
 }

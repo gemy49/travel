@@ -3,6 +3,7 @@ class Flight {
   final String from;
   final String to;
   final String date;
+  final String returnDate;
   final String departureTime;
   final String arrivalTime;
   final double price;
@@ -14,6 +15,7 @@ class Flight {
     required this.from,
     required this.to,
     required this.date,
+    required this.returnDate,
     required this.departureTime,
     required this.arrivalTime,
     required this.price,
@@ -27,6 +29,7 @@ class Flight {
       from: json['from'],
       to: json['to'],
       date: json['date'],
+      returnDate: json['returnDate'],
       departureTime: json['departureTime'],
       arrivalTime: json['arrivalTime'],
       price: json['price'].toDouble(),
@@ -41,6 +44,7 @@ class Flight {
       'from': from,
       'to': to,
       'date': date,
+      'returnDate': returnDate,
       'departureTime': departureTime,
       'arrivalTime': arrivalTime,
       'price': price,

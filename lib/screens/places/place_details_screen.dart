@@ -1,35 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../models/place.dart';
-import '../../widgets/place_card.dart';
+import '../../models/city.dart';
 
-class PlaceDetailsScreen extends StatelessWidget {
-  final Place place;
+class PlacesPage extends StatelessWidget {
+  final City city;
 
-  const PlaceDetailsScreen({Key? key, required this.place}) : super(key: key);
+  const PlacesPage({super.key, required this.city});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(place.name)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Image.network(
-              place.image,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
+      appBar: AppBar(title: Text(city.name)),
+      body: ListView.builder(
+        itemCount: city.places.length,
+        itemBuilder: (context, index) {
+          final place = city.places[index];
+          return Card(
+            margin: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                Image.asset(
+                  "assets/places/${place.image}",
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    place.name,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              place.name,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            ElevatedButton(onPressed: () {}, child: const Text("Save Trip")),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

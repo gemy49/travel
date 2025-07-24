@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/place.dart';
+import '../models/city.dart';
 
 class PlaceCard extends StatelessWidget {
   final Place place;

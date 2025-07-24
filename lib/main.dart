@@ -1,9 +1,16 @@
+import 'package:FlyHigh/screens/flights/PublicFlights.dart';
+import 'package:FlyHigh/screens/hotels/PublicHotels.dart';
+import 'package:FlyHigh/screens/places/public_places.dart';
+import 'package:FlyHigh/providers/City_Provider.dart';
+import 'package:FlyHigh/providers/weather_provider.dart';
+import 'package:FlyHigh/screens/signUpScreen.dart';
+import 'package:FlyHigh/screens/splashScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:FlyHigh/BottomNavigationBar.dart';
-import 'package:FlyHigh/pages/loginScreen.dart';
-import 'package:FlyHigh/pages/signUpScreen.dart';
-import 'package:FlyHigh/pages/splashScreen.dart';
+import 'package:FlyHigh/screens/loginScreen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'providers/counter_bloc.dart';
 import 'core/routes.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
@@ -24,10 +31,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
+
       providers: [
         ChangeNotifierProvider(create: (_) => FlightProvider()),
         ChangeNotifierProvider(create: (_) => HotelProvider()),
         ChangeNotifierProvider(create: (_) => PlaceProvider()),
+        ChangeNotifierProvider(create: (_) => WeatherProvider()),
+        ChangeNotifierProvider(create: (_) => CityProvider()),
+        BlocProvider(create: (_) => CounterBloc()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -38,6 +49,9 @@ class MyApp extends StatelessWidget {
           '/Login': (context) => const LoginScreen(),
           '/signup': (context) => const SignUp(),
           '/BottomNavigationBar': (context) => const Bottomnavigationbar(),
+          '/PublicPlacesPage': (context) => const PublicPlacesPage(),
+          '/PublicFlightsPage': (context) => const PublicFlightsPage(),
+          '/PublicHotelsPage': (context) => const PublicHotelsPage(),
         },
       ),
     );

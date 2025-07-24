@@ -11,10 +11,9 @@ class HotelProvider with ChangeNotifier {
 
   List<Hotel> get hotels => _filteredHotels;
 
-  Future<void> fetchHotels({required String city}) async {
+  Future<void> fetchHotels() async {
     final api = ApiService();
-    _city = city;
-    _hotels = await api.getHotels(city: city);
+    _hotels = await api.getHotels();
     _applyFilter();
   }
 

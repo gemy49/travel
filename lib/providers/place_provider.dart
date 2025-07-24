@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/place.dart';
+import '../models/city.dart';
 import '../services/api_service.dart';
 
 class PlaceProvider with ChangeNotifier {

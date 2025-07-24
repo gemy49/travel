@@ -14,13 +14,14 @@ class HotelsScreen extends StatefulWidget {
 
 class _HotelsScreenState extends State<HotelsScreen> {
   late HotelProvider _hotelProvider;
+  double _maxPrice = 500; // الحد الأقصى للسعر للتصفية
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _hotelProvider = Provider.of<HotelProvider>(context, listen: false);
-      _hotelProvider.fetchHotels(city: widget.city);
+      _hotelProvider.fetchHotels();
     });
   }
 
@@ -28,26 +29,68 @@ class _HotelsScreenState extends State<HotelsScreen> {
   Widget build(BuildContext context) {
     final hotelProvider = Provider.of<HotelProvider>(context);
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Hotels in ${widget.city}')),
-      body: hotelProvider.hotels.isEmpty
-          ? const Center(child: Text("No hotels found in this city."))
-          : ListView.builder(
-              itemCount: hotelProvider.hotels.length,
-              itemBuilder: (context, index) {
-                final hotel = hotelProvider.hotels[index];
-                return HotelCard(
-                  hotel: hotel,
-                  onSelect: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/hotel-details',
-                      arguments: hotel,
-                    );
+    final filteredHotels = hotelProvider.hotels
+        .where((hotel) => hotel.price <= _maxPrice)
+        .toList();
+
+    return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: SingleChildScrollView(
+        child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Text(
+                  "Filter by Price (Max: \$${_maxPrice.toInt()})",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Slider(
+                  inactiveColor: Colors.grey,
+                  activeColor: Colors.blue.shade400,
+                  min: 100,
+                  max: 500,
+                  divisions: 10,
+                  value: _maxPrice,
+                  label: _maxPrice.toInt().toString(),
+                  onChanged: (value) {
+                    setState(() {
+                      _maxPrice = value;
+                    });
                   },
-                );
-              },
+                ),
+              ],
             ),
+          ),
+          // Hotel List
+          filteredHotels.isEmpty
+              ? const Center(
+              child: Text("No hotels found in this price range."))
+              : ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: filteredHotels.length,
+            itemBuilder: (context, index) {
+              final hotel = filteredHotels[index];
+              return InkWell(
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/hotel-details',
+                    arguments: hotel,
+                  );
+                },
+                child: HotelCard(hotel: hotel),
+              );
+            },
+          ),
+        ],
+      ),
+        ),
     );
   }
 }
