@@ -180,6 +180,52 @@ class _FlightsScreenState extends State<FlightsScreen> {
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 children: [
+                  if (_fromQuery.isNotEmpty || _toQuery.isNotEmpty || _startDate != null || _endDate != null)
+                    Container(
+                      margin: EdgeInsets.only(top: 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                if (_fromQuery.isNotEmpty)
+                                  Chip(
+                                    label: Text("From: $_fromQuery"),
+                                    backgroundColor: Colors.white,
+                                    onDeleted: () => _clearSpecificFilter('from'),
+                                  ),
+                                if (_toQuery.isNotEmpty)
+                                  Chip(
+                                    label: Text("To: $_toQuery"),
+                                    backgroundColor:Colors.white,
+                                    onDeleted: () => _clearSpecificFilter('to'),
+                                  ),
+                                if (_startDate != null)
+                                  Chip(
+                                    label: Text("Start: ${_dateController.text}"),
+                                    backgroundColor:Colors.white,
+                                    onDeleted: () => _clearSpecificFilter('date'),
+                                  ),
+                                if (_endDate != null)
+                                  Chip(
+                                    label: Text("End: ${_returnDateController.text}"),
+                                    backgroundColor:Colors.white,
+                                    onDeleted: () => _clearSpecificFilter('return'),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (_fromQuery.isNotEmpty || _toQuery.isNotEmpty || _startDate != null || _endDate != null)
+                            TextButton(
+                              onPressed: _clearAllFilters,
+                              child: Text("Clear All",style: TextStyle(color: Colors.blue.shade500)),
+                            ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 5),
                   TextField(
                     controller: _fromController,
                     decoration: InputDecoration(
@@ -286,53 +332,6 @@ class _FlightsScreenState extends State<FlightsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 15),
-                  // Clear filters button with improved design
-                  if (_fromQuery.isNotEmpty || _toQuery.isNotEmpty || _startDate != null || _endDate != null)
-                    Container(
-                      margin: EdgeInsets.only(top: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: [
-                                if (_fromQuery.isNotEmpty)
-                                  Chip(
-                                    label: Text("From:( $_fromQuery)."),
-                                    backgroundColor: Colors.white,
-                                    onDeleted: () => _clearSpecificFilter('from'),
-                                  ),
-                                if (_toQuery.isNotEmpty)
-                                  Chip(
-                                    label: Text("To: $_toQuery"),
-                                    backgroundColor: Colors.transparent,
-                                    onDeleted: () => _clearSpecificFilter('to'),
-                                  ),
-                                if (_startDate != null)
-                                  Chip(
-                                    label: Text("Start: ${_dateController.text}"),
-                                    backgroundColor:Colors.transparent,
-                                    onDeleted: () => _clearSpecificFilter('date'),
-                                  ),
-                                if (_endDate != null)
-                                  Chip(
-                                    label: Text("End: ${_returnDateController.text}"),
-                                    backgroundColor: Colors.transparent,
-                                    onDeleted: () => _clearSpecificFilter('return'),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          if (_fromQuery.isNotEmpty || _toQuery.isNotEmpty || _startDate != null || _endDate != null)
-                            TextButton(
-                              onPressed: _clearAllFilters,
-                              child: Text("Clear All", style: TextStyle(color: Colors.red.shade400)),
-                            ),
-                        ],
-                      ),
-                    ),
                 ],
               ),
             ),

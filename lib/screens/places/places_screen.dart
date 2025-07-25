@@ -40,6 +40,7 @@ class _CitiesPageState extends State<CitiesPage> {
         .toList();
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

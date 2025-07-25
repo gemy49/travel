@@ -12,7 +12,6 @@ class HotelDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(hotel.name),
         centerTitle: true,
-        backgroundColor: Colors.blue.shade300,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

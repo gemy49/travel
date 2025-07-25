@@ -58,7 +58,25 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
             appBar: AppBar(
               backgroundColor: Colors.white,
               title: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  Column(
+                    children: [
+                      SizedBox(height: 10),
+                      Container(
+                        decoration:BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/logo.png'),
+                            fit: BoxFit.cover,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        width: 50,
+                        height: 80,
+                      ),
+                    ],
+                  ),
+                  SizedBox(width:5),
                   Text(
                     'FlyHigh',
                     style: TextStyle(
@@ -69,14 +87,13 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                     ),
                   ),
                   SizedBox(width: 10),
-                  Icon(Icons.flight, color: Colors.blue.shade300, size: 30),
-                  SizedBox(width: 10),
+
                 ],
               ),
               actions: [
                 Builder(
                   builder: (context) => IconButton(
-                    color: Colors.white,
+                    color: Colors.blue.shade500,
                     icon: Icon(Icons.menu),
                     onPressed: () => Scaffold.of(context).openEndDrawer(),
                   ),
@@ -190,6 +207,7 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                   icon: Favorite == 0
                       ? Icon(Icons.favorite_border_outlined)
                       : Badge(
+                    backgroundColor: Colors.blue.shade200,
                           label: Text('${Favorite}'),
                           child: const Icon(Icons.favorite_border_outlined),
                         ),

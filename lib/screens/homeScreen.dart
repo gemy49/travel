@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/counter_bloc.dart';
+import '../widgets/videoPlayer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -84,57 +85,83 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: double.infinity,
                     height: constraints.maxHeight * 0.25,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      image: const DecorationImage(
-                        image: AssetImage("assets/Home_banner1.jpg"),
-                        fit: BoxFit.cover,
-                      ),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(
-                            right: constraints.maxWidth * 0.2,
-                            top: constraints.maxHeight * 0.02,
+                    child: ClipRRect(
+
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Video Player
+                          VideoPlayerWidget(), // Replace with your video player implementation
+
+                          // Overlay Content
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: constraints.maxHeight * 0.02,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Explore the",
+                                      style: TextStyle(
+                                        fontSize: constraints.maxWidth * 0.06,
+                                        fontWeight: FontWeight.bold,
+                                        fontStyle: FontStyle.italic,
+                                        color: Colors.white, // Add color for better visibility
+                                        shadows: [ // Add shadow for better text visibility
+                                          Shadow(
+                                            offset: Offset(1, 1),
+                                            blurRadius: 3,
+                                            color: Colors.black54,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Text(
+                                       " world",
+                                      style: TextStyle(
+                                        fontSize: constraints.maxWidth * 0.06,
+                                        fontWeight: FontWeight.bold,
+                                        fontStyle: FontStyle.italic,
+                                        color: Colors.blue.shade500, // Add color for better visibility
+                                        shadows: [ // Add shadow for better text visibility
+                                          Shadow(
+                                            offset: Offset(1, 1),
+                                            blurRadius: 3,
+                                            color: Colors.black54,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                "your way",
+                                style: TextStyle(
+                                  fontSize: constraints.maxWidth * 0.05,
+                                  fontWeight: FontWeight.bold,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(1, 1),
+                                      blurRadius: 3,
+                                      color: Colors.black54,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Text(
-                            "Welcome to FlyHigh",
-                            style: TextStyle(
-                              fontSize: constraints.maxWidth * 0.06,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(
-                            right: constraints.maxWidth * 0.37,
-                            top: constraints.maxHeight * 0.03,
-                          ),
-                          child: Text(
-                            "THE Best Way To Fly High",
-                            style: TextStyle(
-                              fontSize: constraints.maxWidth * 0.05,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(
-                            right: constraints.maxWidth * 0.5,
-                            top: constraints.maxHeight * 0.03,
-                          ),
-                          child: Text(
-                            "With US, you can: ",
-                            style: TextStyle(
-                              fontSize: constraints.maxWidth * 0.05,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   SizedBox(height: constraints.maxHeight * 0.02),
