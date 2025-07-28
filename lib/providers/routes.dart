@@ -1,32 +1,18 @@
+// lib/core/routes.dart
 import 'package:flutter/material.dart';
-
-// --- Correctly import FlightDetailsScreen ---
-// Make sure this path matches the actual location of your FlightDetailsScreen file.
 import 'package:FlyHigh/screens/flights/flight_details_screen.dart';
-// If FlightBookingData is defined inside flight_details_screen.dart, this import should make it accessible.
-// If you moved FlightBookingData to its own file (recommended), import it like this:
-// import 'package:FlyHigh/models/flight_booking_data.dart'; // Adjust path if needed
-
-// --- Correctly import HotelDetailsScreen ---
-import 'package:FlyHigh/screens/hotels/hotel_details_screen.dart';
-
-// --- Import Models ---
-import 'package:FlyHigh/models/flight.dart';
-import 'package:FlyHigh/models/hotel.dart';// --- Correctly import Flight_Payment ---
-// Make sure this path matches the actual location of your Flight_Payment file.
+import 'package:FlyHigh/screens/hotels/hotel_details_screen.dart'; // Make sure this import is correct
 import 'package:FlyHigh/screens/flights/Flight_payment.dart';
+import 'package:FlyHigh/screens/flights/MyFlights.dart'; // Make sure this import is correct
+// import 'package:FlyHigh/screens/hotels/MyHotels.dart'; // Import MyHotelsScreen if you have it
 
-import '../models/Flights_booking_data.dart'; // Adjust path if needed (e.g., lib/screens/payments/flight_payment.dart)
-
-// If FlightBookingData is defined *inside* Flight_Payment.dart, you might need to import it from there instead.
-// However, defining it in its own model file (e.g., lib/models/flight_booking_data.dart) is better practice.
-// If it's defined in Flight_Payment.dart and you must import it from there:
-// import 'package:FlyHigh/screens/Flight_payment.dart' show FlightBookingData; // Only import FlightBookingData
-// OR import the whole file and use the full name: Flight_Payment.FlightBookingData (if it's nested)
+import 'package:FlyHigh/models/flight.dart';
+import 'package:FlyHigh/models/hotel.dart';
+// import 'package:provider/provider.dart'; // Not needed here anymore
+import '../models/Flights_booking_data.dart'; // Adjust path if needed
 
 class RouteGenerator {
-  static Route<dynamic>generateRoute(RouteSettings settings) {
-    // Print the route name for debugging
+  static Route<dynamic> generateRoute(RouteSettings settings) {
     print('RouteGenerator: Attempting to generate route for ${settings.name}');
     print('RouteGenerator: Arguments received: ${settings.arguments} (Type: ${settings.arguments.runtimeType})');
 
@@ -34,7 +20,6 @@ class RouteGenerator {
       case '/flight-details':
         final args = settings.arguments;
         if (args is Flight) {
-          // Ensure FlightDetailsScreen is accessible via the import
           return MaterialPageRoute(
             builder: (_) => FlightDetailsScreen(flight: args),
           );
@@ -42,7 +27,7 @@ class RouteGenerator {
           final flight = args['flight'] as Flight?;
           if (flight != null) {
             return MaterialPageRoute(
-              builder: (_) =>FlightDetailsScreen(flight: flight),
+              builder: (_) => FlightDetailsScreen(flight: flight),
             );
           }
         }
@@ -51,50 +36,68 @@ class RouteGenerator {
 
       case '/hotel-details':
         final args = settings.arguments;
+        // Option 1: Directly pass the Hotel object (Preferred if you have it)
         if (args is Hotel) {
-          // Ensure HotelDetailsScreen is accessible via the import
           return MaterialPageRoute(
             builder: (_) => HotelDetailsScreen(hotel: args),
           );
         }
+        // Option 2: Pass the hotel ID (int) - HotelDetailsScreen will fetch data
+        else if (args is int) {
+          // Pass the hotel ID to the HotelDetailsScreen
+          return MaterialPageRoute(
+            builder: (_) => HotelDetailsScreen(hotelId: args),
+          );
+        }
+        // Option 3: Pass hotel data as a Map (less ideal for complex objects)
+        else if (args is Map<String, dynamic>) {
+          // You could handle Map construction here if needed, but passing ID or object is better
+          // For now, let's assume Map contains 'id'
+          final int? hotelId = args['id'] as int?;
+          if (hotelId != null) {
+            return MaterialPageRoute(
+              builder: (_) => HotelDetailsScreen(hotelId: hotelId),
+            );
+          }
+        }
         print('RouteGenerator: Invalid arguments for /hotel-details: $args');
         return _errorRoute();
 
-      case '/Flight_Payment': // Ensure this matches the string used in Navigator.pushNamed exactly, including case.
+      case '/Flight_Payment':
         final args = settings.arguments;
 
-        // --- Option 1:If FlightBookingData is passed directly (Preferred) ---
         if (args is FlightBookingData) {
           print('RouteGenerator: Navigating to Flight_Payment with FlightBookingData');
           return MaterialPageRoute(
-            builder: (_) => Flight_Payment(bookingData: args), // Ensure Flight_Payment constructor accepts bookingData
+            builder: (_) => Flight_Payment(bookingData: args),
           );
-        }
-        // --- Option 2: If a Flight object is passed, create FlightBookingData ---
-        else if (args is Flight) {
+        } else if (args is Flight) {
           print('RouteGenerator: Navigating to Flight_Payment with Flight object, creating default FlightBookingData');
-          // Create FlightBookingData with a default number of seats (e.g., 1)
-          final bookingData = FlightBookingData(flight: args, numberOfAdults: 1,numberOfChildren: 0);
+          // Note: If FlightBookingData now uses numberOfAdults/Children, adjust this
+          final bookingData = FlightBookingData(flight: args, numberOfAdults: 1, numberOfChildren: 0);
           return MaterialPageRoute(
-            builder: (_) =>Flight_Payment(bookingData: bookingData),
+            builder: (_) => Flight_Payment(bookingData: bookingData),
           );
-        }
-        // --- Option 3: If passing as a Map ---
-        else if (args is Map<String, dynamic>) {
+        } else if (args is Map<String, dynamic>) {
           print('RouteGenerator: Navigating to Flight_Payment with Map arguments');
           final flight = args['flight'] as Flight?;
-          final int numberOfAdults = args['numberOfSeats'] as int? ?? 1; // Provide default
-          final int numberOfChildren = args['numberOfChildren'] as int? ?? 1; // Provide default
+          // Note: Extract numberOfAdults/Children if passed in Map
+          final int numberOfAdults = args['numberOfAdults'] as int? ?? 1;
+          final int numberOfChildren = args['numberOfChildren'] as int? ?? 0;
           if (flight != null) {
-            final bookingData = FlightBookingData(flight: flight, numberOfAdults: numberOfAdults,numberOfChildren:numberOfChildren );
+            final bookingData = FlightBookingData(flight: flight, numberOfAdults: numberOfAdults, numberOfChildren: numberOfChildren);
             return MaterialPageRoute(
               builder: (_) => Flight_Payment(bookingData: bookingData),
             );
           }
         }
-        // --- Error Case: Unexpected or missing arguments ---
         print('RouteGenerator: Invalid arguments for /Flight_Payment: $args');
         return _errorRoute();
+
+      case '/my-flights':
+        return MaterialPageRoute(
+          builder: (_) => const MyFlightsScreen(),
+        );
 
       default:
         print('RouteGenerator: Route not found for ${settings.name}');

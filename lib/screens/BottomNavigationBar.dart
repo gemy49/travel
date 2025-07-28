@@ -1,9 +1,7 @@
-import 'package:FlyHigh/providers/counter_State.dart';
 import 'package:FlyHigh/screens/Favorite.dart';
 import 'package:FlyHigh/screens/SideMenu/about_us_screen.dart';
 import 'package:FlyHigh/screens/SideMenu/contact_us_screen.dart';
 import 'package:FlyHigh/screens/SideMenu/faq_screen.dart';
-import 'package:FlyHigh/screens/places/public_places.dart';
 import 'package:FlyHigh/screens/flights/flights_screen.dart';
 import 'package:FlyHigh/screens/hotels/hotels_screen.dart';
 import 'package:FlyHigh/screens/places/places_screen.dart';
@@ -12,8 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:FlyHigh/screens/homeScreen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../providers/counter_bloc.dart';
-
+import 'flights/MyFlights.dart';
+import 'hotels/MyHotels.dart';
+import 'package:FlyHigh/providers/counter_bloc.dart'; // Should point to the file with `class CounterBloc extends Cubit<PageState>`
+import 'package:FlyHigh/providers/counter_state.dart';
 class Bottomnavigationbar extends StatefulWidget {
   const Bottomnavigationbar({super.key});
 
@@ -133,8 +133,24 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                           leading: Icon(Icons.flight),
                           title: Text('MY FIGHTS'),
                           onTap: () {
-                            cubit.updatePage(7);
-                            Navigator.pop(context);
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MyFlightsScreen(), // Make sure MyFlightsScreen is accessible
+                                ),
+                                );
+                          },
+                        ),
+                         ListTile(
+                          leading: Icon(Icons.hotel),
+                          title: Text('MY Rooms'),
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MyHotelsScreen(), // Make sure MyFlightsScreen is accessible
+                                ),
+                                );
                           },
                         ),
                         Divider(),

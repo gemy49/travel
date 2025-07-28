@@ -1,5 +1,4 @@
 import 'package:FlyHigh/screens/flights/PublicFlights.dart';
-import 'package:FlyHigh/screens/hotels/PublicHotels.dart';
 import 'package:FlyHigh/screens/places/public_places.dart';
 import 'package:FlyHigh/providers/City_Provider.dart';
 import 'package:FlyHigh/providers/weather_provider.dart';
@@ -51,7 +50,6 @@ class MyApp extends StatelessWidget {
           '/BottomNavigationBar': (context) => const Bottomnavigationbar(),
           '/PublicPlacesPage': (context) => const PublicPlacesPage(),
           '/PublicFlightsPage': (context) => const PublicFlightsPage(),
-          '/PublicHotelsPage': (context) => const PublicHotelsPage(),
         },
       ),
     );

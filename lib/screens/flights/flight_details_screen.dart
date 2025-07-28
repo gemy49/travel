@@ -105,22 +105,14 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                           // Flight Info Rows - Updated to match data fields
                           _infoRow(Icons.flight_takeoff, 'From',
                               widget.flight.from, primaryColor),
-                          _infoRow(Icons.flight_land, 'To', widget.flight.to,
-                              primaryColor),
-                          _infoRow(
-                              Icons.date_range, 'Departure Date', widget.flight.date, primaryColor),
-                          _infoRow(
-                              Icons.access_time, 'Departure Time', widget.flight.departureTime, primaryColor),
-                          _infoRow(
-                              Icons.date_range, 'Return Date', widget.flight.returnDate, primaryColor),
-                          _infoRow(
-                              Icons.access_time, 'Arrival Time', widget.flight.arrivalTime, primaryColor),
-                          _infoRow(Icons.monetization_on, 'Base Price (Adult)',
-                              '\$${widget.flight.price}', primaryColor), // Clarify adult price
-                          _infoRow(Icons.monetization_on, 'Base Price (Child)',
-                              '\$${(widget.flight.price * 0.5).toStringAsFixed(2)}', primaryColor), // Show child price
-                          _infoRow(Icons.airlines, 'Airline',
-                              widget.flight.airline, primaryColor),
+                          _infoRow(Icons.flight_land, 'To', widget.flight.to, primaryColor),
+                          _infoRow(Icons.date_range, 'Departure Date', widget.flight.date, primaryColor),
+                          _infoRow(Icons.date_range, 'Return Date', widget.flight.returnDate, primaryColor),
+                          _infoRow(Icons.access_time, 'Departure Time', widget.flight.departureTime, primaryColor),
+                          _infoRow(Icons.access_time, 'Arrival Time', widget.flight.arrivalTime, primaryColor),
+                          _infoRow(Icons.monetization_on, 'Base Price (Adult)', '\$${widget.flight.price}', primaryColor), // Clarify adult price
+                          _infoRow(Icons.monetization_on, 'Base Price (Child)', '\$${(widget.flight.price * 0.5).toStringAsFixed(2)}', primaryColor), // Show child price
+                          _infoRow(Icons.airlines, 'Airline', widget.flight.airline, primaryColor),
                           // Removed transit section as it's not in the provided data sample
 
                           const SizedBox(height: 15),

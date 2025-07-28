@@ -1,25 +1,171 @@
-import 'package:FlyHigh/models/HotelRoom.dart';
+// lib/screens/hotels/hotel_details_screen.dart
+
 import 'package:flutter/material.dart';
+// Assuming HotelRoom is defined within hotel.dart or imported separately
+// import 'package:FlyHigh/models/hotel_room.dart'; // If separate
 import 'package:FlyHigh/models/hotel.dart';
+import 'package:FlyHigh/models/hotel_booking_data.dart'; // You'll need this model
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-// Assuming you have a route for booking/payment
-// import '../screens/hotel_booking_payment_screen.dart'; // Adjust path
+// Import your providers
+import '../../providers/hotel_provider.dart';
+import 'Hotel_payment.dart'; // Adjust path
 
 class HotelDetailsScreen extends StatefulWidget {
-  final Hotel hotel;
+  // Accept either the full Hotel object OR just the ID
+  final Hotel? hotel; // Make hotel nullable
+  final int? hotelId; // Add hotelId parameter
 
-  const HotelDetailsScreen({super.key, required this.hotel});
+  const HotelDetailsScreen({super.key, this.hotel, this.hotelId})
+      : assert(hotel != null || hotelId != null, 'Either hotel or hotelId must be provided'),
+        assert(!(hotel != null && hotelId != null), 'Cannot provide both hotel and hotelId');
 
   @override
   State<HotelDetailsScreen> createState() => _HotelDetailsScreenState();
 }
 
 class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
-  // Map to store the quantity selected for each room type
-  // Key: room type (String), Value: quantity (int)
+  // State for the hotel data and loading state
+  Hotel? _hotel;
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  // State for room selection (as before)
   Map<String, int> _selectedRoomQuantities = {};
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.hotel != null) {
+      // If hotel object is provided directly, use it
+      _hotel = widget.hotel;
+      setState(() {
+        _isLoading = false;
+      });
+    } else if (widget.hotelId != null) {
+      // If only hotelId is provided, fetch the hotel data
+      _fetchHotelById(widget.hotelId!);
+    }
+  }
+
+  Future<void> _fetchHotelById(int id) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      // Access the HotelProvider
+      final hotelProvider = Provider.of<HotelProvider>(context, listen: false);
+
+      // Ensure hotels are loaded
+      if (hotelProvider.hotels.isEmpty) {
+        await hotelProvider.fetchHotels();
+      }
+
+      // Find the hotel by ID
+      final Hotel? foundHotel =
+      hotelProvider.hotels.firstWhere((hotel) => hotel.id == id, ); // Provide a default/fallback
+
+      if (foundHotel != null && foundHotel.id != 0) { // Assuming ID 0 means not found or empty
+        setState(() {
+          _hotel = foundHotel;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Hotel with ID $id not found.';
+          _isLoading = false;
+        });
+      }
+    } catch (error) {
+      print("Error fetching hotel by ID: $error");
+      setState(() {
+        _errorMessage = 'Failed to load hotel details.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // --- Room selection logic (as before) ---
+  void _updateRoomQuantity(String roomType, int change) {
+    setState(() {
+      int currentQuantity = _selectedRoomQuantities[roomType] ?? 0;
+      int newQuantity = currentQuantity + change;
+      if (newQuantity < 0) newQuantity = 0;
+      if (newQuantity == 0) {
+        _selectedRoomQuantities.remove(roomType);
+      } else {
+        _selectedRoomQuantities[roomType] = newQuantity;
+      }
+    });
+  }
+
+  double _calculateTotalPrice() {
+    if (_hotel == null) return 0.0;
+    double total = 0.0;
+    _selectedRoomQuantities.forEach((roomType, quantity) {
+      final room = _hotel!.availableRooms.firstWhere(
+            (r) => r.type == roomType,
+        orElse: () => availableRoom(type: roomType, price: 0, quantity: 0),
+      );
+      total += room.price * quantity;
+    });
+    return total;
+  }
+
+  List<Map<String, dynamic>> _getSelectedRoomsData() {
+    if (_hotel == null) return [];
+    List<Map<String, dynamic>> selectedData = [];
+    _selectedRoomQuantities.forEach((roomType, quantity) {
+      if (quantity > 0) {
+        final room = _hotel!.availableRooms.firstWhere(
+              (r) => r.type == roomType,
+          orElse: () => availableRoom(type: roomType, price: 0, quantity: 0),
+        );
+        selectedData.add({
+          'type': roomType,
+          'quantity': quantity,
+          'pricePerNight': room.price,
+          'totalPriceForType': room.price * quantity,
+        });
+      }
+    });
+    return selectedData;
+  }
+
+  void _handleBooking(BuildContext context) {
+    if (_hotel == null) return;
+
+    final double totalPrice = _calculateTotalPrice();
+    final List<Map<String, dynamic>> selectedRoomsData = _getSelectedRoomsData();
+
+    if (selectedRoomsData.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one room.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final bookingData = HotelBookingData(
+      hotel: _hotel!, // Use the fetched hotel
+      selectedRooms: selectedRoomsData,
+      totalPrice: totalPrice,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HotelPaymentScreen(bookingData: bookingData),
+      ),
+    );
+  }
+
   void _openMap(BuildContext context, double latitude, double longitude) async {
+    // Replace with actual coordinates if available in your model
     final Uri mapUrl = Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
 
@@ -33,8 +179,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                  'Cannot open maps. Please ensure a maps app is installed.'),
+              content:
+              Text('Cannot open maps. Please ensure a maps app is installed.'),
               backgroundColor: Colors.red,
             ),
           );
@@ -53,113 +199,38 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     }
   }
 
-  // Function to update the quantity for a specific room type
-  void _updateRoomQuantity(String roomType, int change) {
-    setState(() {
-      int currentQuantity = _selectedRoomQuantities[roomType] ?? 0;
-      int newQuantity = currentQuantity + change;
-
-      // Ensure quantity doesn't go below 0
-      if (newQuantity < 0) newQuantity = 0;
-
-      if (newQuantity == 0) {
-        // Remove entry if quantity is 0
-        _selectedRoomQuantities.remove(roomType);
-      } else {
-        // Update the quantity
-        _selectedRoomQuantities[roomType] = newQuantity;
-      }
-    });
-  }
-
-  // Calculate the total price based on selected rooms
-  double _calculateTotalPrice() {
-    double total = 0.0;
-    _selectedRoomQuantities.forEach((roomType, quantity) {
-      // Find the room details in the hotel's availableRooms list
-      final room = widget.hotel.availableRooms.firstWhere(
-            (r) => r.type == roomType,
-        // --- UPDATED LINE ---
-        orElse: () => availableRoom(type: roomType, price: 0, quantity: 0), // Return availableRoom instance
-      );
-      total += room.price * quantity;
-    });
-    return total;
-  }
-
-  // Prepare data for booking (e.g., list of selected room types and quantities)
-  List<Map<String, dynamic>> _getSelectedRoomsData() {
-    List<Map<String, dynamic>> selectedData = [];
-    _selectedRoomQuantities.forEach((roomType, quantity) {
-      if (quantity > 0) {
-        final room = widget.hotel.availableRooms.firstWhere(
-              (r) => r.type == roomType,
-          // --- UPDATED LINE ---
-          orElse: () => availableRoom(type: roomType, price: 0, quantity: 0), // Return availableRoom instance
-        );
-// Add to selectedData map, ensuring property names match availableRoom
-        selectedData.add({
-          'type': roomType,
-          'quantity': quantity,
-          'pricePerNight': room.price, // Use 'price' property
-          'totalPriceForType': room.price * quantity,
-        });
-      }
-    });
-    return selectedData;
-  }
-
-  // Handle booking action
-  void _handleBooking(BuildContext context) {
-    final double totalPrice = _calculateTotalPrice();
-    final List<Map<String, dynamic>> selectedRoomsData = _getSelectedRoomsData();
-
-    if (selectedRoomsData.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one room.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // TODO: Navigate to booking/payment screen, passing selected data and total price
-
-    String summary = "Booking Summary:\n";
-    for (var roomData in selectedRoomsData) {
-      summary +=
-      "${roomData['quantity']} x ${roomData['type']} (\$${roomData['pricePerNight']} each) = \$${roomData['totalPriceForType']}\n";
-    }
-    summary += "Total: \$${totalPrice.toStringAsFixed(2)}";
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(summary),
-        backgroundColor: Colors.blue,
-        duration: const Duration(seconds: 5),
-      ),
-    );
-  }
-
+  // --- UI Building (mostly as before, but using _hotel) ---
   @override
   Widget build(BuildContext context) {
-    // Define primary color based on the chip color from previous designs (File 2)
     final Color primaryColor = Colors.blue.shade500;
 
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_errorMessage.isNotEmpty || _hotel == null) {
+      return Scaffold(
+        body: Center(child: Text(_errorMessage.isEmpty ? 'Hotel data is missing.' : _errorMessage)),
+      );
+    }
+
+    // Use the fetched _hotel object
+    final hotel = _hotel!;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFf5f5f5), // Consistent background
+      backgroundColor: const Color(0xFFf5f5f5),
       body: CustomScrollView(
         slivers: [
-          // Custom AppBar with primary color
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
-            backgroundColor: primaryColor, // Use primary color
+            backgroundColor: primaryColor,
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
-                widget.hotel.name, // Keep hotel name as is
+                hotel.name,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -176,7 +247,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                 fit: StackFit.expand,
                 children: [
                   Image.asset(
-                    "assets/Hotels/${widget.hotel.image}",
+                    "assets/Hotels/${hotel.image}",
                     fit: BoxFit.cover,
                   ),
                   Container(
@@ -195,15 +266,12 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
               ),
             ),
           ),
-
-          // Main content
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Description card
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -223,16 +291,16 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Description', // English
+                            'Description',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: primaryColor, // Use primary color
+                              color: primaryColor,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            widget.hotel.description,
+                            hotel.description,
                             style: const TextStyle(
                               fontSize: 16,
                               height: 1.5,
@@ -244,8 +312,6 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Location section
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -267,12 +333,12 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                           children: [
                             Icon(
                               Icons.location_on,
-                              color: primaryColor, // Use primary color
+                              color: primaryColor,
                               size: 28,
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              widget.hotel.city,
+                              hotel.city, // Or hotel.location if more specific
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -282,17 +348,18 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                             const Spacer(),
                             ElevatedButton.icon(
                               onPressed: () {
-                                _openMap(context, 25.1415548, 55.1862657); // Example coords
+                                // Use actual coordinates if available
+                                _openMap(context, 25.1415548, 55.1862657);
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor, // Use primary color
+                                backgroundColor: primaryColor,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               icon: const Icon(Icons.map, size: 18),
-                              label: const Text("View on Map"), // English
+                              label: const Text("View on Map"),
                             ),
                           ],
                         ),
@@ -300,112 +367,22 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Amenities section (remains the same)
                   Text(
-                    "Amenities:", // English
+                    "Select Rooms:",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: primaryColor, // Use primary color
+                      color: primaryColor,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.hotel.amenities
-                        .map((amenity) =>
-                        _buildAmenityChip(amenity, primaryColor))
-                        .toList(),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Rating section (remains the same)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Rating:', // English
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor, // Use primary color
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            ...List.generate(5, (index) {
-                              if (index < widget.hotel.rate.floor()) {
-                                return const Icon(
-                                  Icons.star,
-                                  color: Colors.amber,
-                                  size: 30,
-                                );
-                              } else if (index < widget.hotel.rate &&
-                                  widget.hotel.rate - index >= 0.5) {
-                                return const Icon(
-                                  Icons.star_half,
-                                  color: Colors.amber,
-                                  size: 30,
-                                );
-                              } else {
-                                return const Icon(
-                                  Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 30,
-                                );
-                              }
-                            }),
-                            const SizedBox(width: 10),
-                            Text(
-                              widget.hotel.rate.toStringAsFixed(1),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Rooms section - Updated for selection
-                  Text(
-                    "Select Rooms:", // Updated title
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor, // Use primary color
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...widget.hotel.availableRooms.map((room) {
+                  ...hotel.availableRooms.map((room) {
                     final int selectedQuantity =
                         _selectedRoomQuantities[room.type] ?? 0;
-                    return _buildRoomSelectionRow(room, selectedQuantity,
-                        primaryColor); // Use new helper
+                    return _buildRoomSelectionRow(
+                        room, selectedQuantity, primaryColor);
                   }).toList(),
                   const SizedBox(height: 10),
-
-                  // Display Total Price
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -434,10 +411,89 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Book Button
+                  Text(
+                    "Amenities:",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: hotel.amenities
+                        .map((amenity) => _buildAmenityChip(amenity, primaryColor))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Rating:',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            ...List.generate(5, (index) {
+                              if (index < hotel.rate.floor()) {
+                                return const Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 30,
+                                );
+                              } else if (index < hotel.rate &&
+                                  hotel.rate - index >= 0.5) {
+                                return const Icon(
+                                  Icons.star_half,
+                                  color: Colors.amber,
+                                  size: 30,
+                                );
+                              } else {
+                                return const Icon(
+                                  Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 30,
+                                );
+                              }
+                            }),
+                            const SizedBox(width: 10),
+                            Text(
+                              hotel.rate.toStringAsFixed(1),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   Container(
                     height: 60,
                     width: double.infinity,
@@ -458,7 +514,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: () => _handleBooking(context), // Call handler
+                      onPressed: () => _handleBooking(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -467,7 +523,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                         ),
                       ),
                       child: const Text(
-                        'Book Now', // English
+                        'Book Now',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -486,7 +542,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     );
   }
 
-  // Helper Widget: Builds a row for selecting room quantity
+  // --- Helper Widgets (as before, using local variables) ---
   Widget _buildRoomSelectionRow(
       dynamic room, int selectedQuantity, Color primaryColor) {
     return Container(
@@ -500,33 +556,27 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Room Type and Price
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 room.type,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w600),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               Text(
                 '\$${room.price.toStringAsFixed(2)} per night',
-                style: const TextStyle(
-                    fontSize: 14, color: Colors.black54),
+                style: const TextStyle(fontSize: 14, color: Colors.black54),
               ),
             ],
           ),
-          // Quantity Selector
           Row(
             children: [
-              // Minus Button
               IconButton(
                 icon: Icon(Icons.remove_circle_outline, color: primaryColor),
                 onPressed: () {
                   _updateRoomQuantity(room.type, -1);
                 },
               ),
-              // Quantity Display
               Container(
                 width: 40,
                 alignment: Alignment.center,
@@ -535,18 +585,16 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                   style: const TextStyle(fontSize: 18),
                 ),
               ),
-              // Plus Button
               IconButton(
                 icon: Icon(Icons.add_circle_outline, color: primaryColor),
                 onPressed: () {
-                  // Optional: Check if adding exceeds available quantity
                   if (selectedQuantity < room.quantity) {
                     _updateRoomQuantity(room.type, 1);
                   } else {
-                    // Show snackbar or disable button if limit reached
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Only ${room.quantity} ${room.type}(s) available.'),
+                        content: Text(
+                            'Only ${room.quantity} ${room.type}(s) available.'),
                         backgroundColor: Colors.orange,
                       ),
                     );
@@ -560,7 +608,6 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     );
   }
 
-  // Amenity chip (remains the same) - now accepts primary color
   Widget _buildAmenityChip(String amenity, Color primaryColor) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -574,14 +621,14 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
         children: [
           const Icon(
             Icons.check_circle,
-            color: Colors.blue, // Or primaryColor
+            color: Colors.blue,
             size: 16,
           ),
           const SizedBox(width: 4),
           Text(
             amenity,
             style: const TextStyle(
-              color: Colors.blue, // Or primaryColor
+              color: Colors.blue,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -591,11 +638,22 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 }
 
-// --- Example HotelRoom model structure (ensure your model matches this) ---
-// class HotelRoom {
-//   final String type;
-//   final double price; // Changed to double
-//   final int quantity; // Available quantity
-
-//   HotelRoom({required this.type, required this.price, required this.quantity});
+// --- Add this helper to your Hotel model or as a separate utility ---
+// In your hotel.dart model file, you might want to add this for the fallback:
+// class Hotel {
+//   // ... existing fields ...
+//   Hotel.empty() // Named constructor for empty state
+//       : id = 0,
+//         city = '',
+//         location = '',
+//         name = '',
+//         availableRooms = [],
+//         onSale = false,
+//         rate = 0.0,
+//         image = '',
+//         description = '',
+//         amenities = [],
+//         contact = {};
+//
+//   // ... rest of Hotel class ...
 // }

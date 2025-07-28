@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/counter_bloc.dart';
+import '../providers/hotel_provider.dart';
 import '../providers/videoPlayer.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -37,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'title': '2. Book your Rooms',
       'pageIndex': 2,
-      "Id": [0,1, 2, 3, 4,],
+      "Id": [13,1, 29, 21,33,],
       'images': [
         'assets/Hotels/The Ritz London.jpg',
         'assets/Hotels/Atlantis The Palm.jpg',
@@ -45,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'assets/Hotels/Park Hyatt Tokyo.jpg',
         'assets/Hotels/Four Seasons Cairo Nile Plaza.jpg',
       ],
-      'routs': "/PublicHotelsPage",
+      'routs': "/hotel-details",
     },
     {
       'title': '3. Explore new places',
@@ -61,6 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
       'routs': "/PublicPlacesPage",
     },
   ];
+
+
 
   @override
   Widget build(BuildContext context) {
