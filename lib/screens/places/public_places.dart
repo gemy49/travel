@@ -78,12 +78,25 @@ class _PublicPlacesPageState extends State<PublicPlacesPage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text(
-                    place.name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Column(
+                    children: [
+                      Text(
+                        place.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        textAlign: TextAlign.center,
+                        place.description,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

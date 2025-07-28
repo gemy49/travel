@@ -5,7 +5,6 @@ import '../services/api_service.dart';
 class HotelProvider with ChangeNotifier {
   List<Hotel> _hotels = [];
   List<Hotel> _filteredHotels = [];
-  String _city = '';
   double _minPrice = 0;
   double _maxPrice = double.infinity;
 
@@ -35,9 +34,15 @@ class HotelProvider with ChangeNotifier {
   }
 
   void _applyFilter() {
-    _filteredHotels = _hotels
-        .where((hotel) => hotel.price >= _minPrice && hotel.price <= _maxPrice)
-        .toList();
+    _filteredHotels = _hotels.where((hotel) {
+      if (hotel.availableRooms.isEmpty) return false;
+
+      int minRoomPrice = hotel.availableRooms.map((room) => room.price).reduce((a, b) => a < b ? a : b);
+
+      return minRoomPrice >= _minPrice && minRoomPrice <= _maxPrice;
+    }).toList();
+
     notifyListeners();
   }
+
 }

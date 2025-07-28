@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../providers/counter_bloc.dart';
+import '../../providers/counter_bloc.dart';
 
 const Color primaryColor = Color(0xFF77BEF0);
 

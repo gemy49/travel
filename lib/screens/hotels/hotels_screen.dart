@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:FlyHigh/providers/hotel_provider.dart';
-import 'package:FlyHigh/widgets/hotel_card.dart';
+import 'package:FlyHigh/screens/hotels/hotel_card.dart';
 
 class HotelsScreen extends StatefulWidget {
   final String city;
@@ -55,24 +55,31 @@ class _HotelsScreenState extends State<HotelsScreen> {
   @override
   Widget build(BuildContext context) {
     final hotelProvider = Provider.of<HotelProvider>(context);
-
     // Get unique cities from hotels data
     final List<String> cities = hotelProvider.hotels
         .map((hotel) => hotel.city)
         .toSet()
         .toList()
       ..sort();
+    final List<int> price = hotelProvider.hotels
+        .expand((hotel) => hotel.availableRooms.map((room) => room.price))
+        .toSet()
+        .toList()
+      ..sort();
 
     // Apply filters
     final filteredHotels = hotelProvider.hotels
-        .where((hotel) => hotel.price <= _maxPrice)
+        .where((hotel) =>
+    hotel.availableRooms.isNotEmpty &&
+        hotel.availableRooms
+            .map((room) => room.price)
+            .reduce((a, b) => a < b ? a : b) <=
+            _maxPrice)
         .where((hotel) {
-      // If no ratings selected, show all hotels
       if (_selectedRatings.isEmpty) return true;
-      // Show hotels that match selected ratings
       return _selectedRatings.contains(hotel.rate);
     })
-        .where((hotel) {
+    .where((hotel) {
       // If no city selected or selected city is the default, show all
       if (_selectedCity == null || _selectedCity == widget.city) return true;
       // Show hotels that match selected city

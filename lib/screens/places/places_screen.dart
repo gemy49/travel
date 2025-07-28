@@ -36,7 +36,7 @@ class _CitiesPageState extends State<CitiesPage> {
   Widget build(BuildContext context) {
     final allCities = context.watch<CityProvider>().cities;
     final filteredCities = allCities
-        .where((city) => city.name.toLowerCase().contains(_searchText.toLowerCase()))
+        .where((city) => city.city.toLowerCase().contains(_searchText.toLowerCase()))
         .toList();
 
     return Scaffold(
@@ -103,7 +103,7 @@ class _CitiesPageState extends State<CitiesPage> {
                         Padding(
                           padding: const EdgeInsets.all(12),
                           child: Text(
-                            city.name,
+                            city.city,
                             style: const TextStyle(fontSize: 20),
                           ),
                         ),

@@ -1,9 +1,8 @@
-import 'package:FlyHigh/screens/places/public_places.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/counter_bloc.dart';
-import '../widgets/videoPlayer.dart';
+import '../providers/videoPlayer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

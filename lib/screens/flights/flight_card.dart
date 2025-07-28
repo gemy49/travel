@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:FlyHigh/models/flight.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../providers/counter_bloc.dart';
+import '../../providers/counter_bloc.dart';
 
 class FlightCard extends StatefulWidget {
   final Flight flight;

@@ -1,18 +1,18 @@
 import 'package:FlyHigh/providers/counter_State.dart';
 import 'package:FlyHigh/screens/Favorite.dart';
-import 'package:FlyHigh/screens/about_us_screen.dart';
-import 'package:FlyHigh/screens/contact_us_screen.dart';
-import 'package:FlyHigh/screens/faq_screen.dart';
+import 'package:FlyHigh/screens/SideMenu/about_us_screen.dart';
+import 'package:FlyHigh/screens/SideMenu/contact_us_screen.dart';
+import 'package:FlyHigh/screens/SideMenu/faq_screen.dart';
 import 'package:FlyHigh/screens/places/public_places.dart';
 import 'package:FlyHigh/screens/flights/flights_screen.dart';
 import 'package:FlyHigh/screens/hotels/hotels_screen.dart';
 import 'package:FlyHigh/screens/places/places_screen.dart';
-import 'package:FlyHigh/screens/privacy_policy_screen.dart';
+import 'package:FlyHigh/screens/SideMenu/privacy_policy_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:FlyHigh/screens/homeScreen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'providers/counter_bloc.dart';
+import '../providers/counter_bloc.dart';
 
 class Bottomnavigationbar extends StatefulWidget {
   const Bottomnavigationbar({super.key});
@@ -221,34 +221,6 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
               const HotelsScreen(city: "Dubai"),
               CitiesPage(),
               const FavoriteFlightsScreen(),
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Column(
-                  children: <Widget>[
-                    Card(
-                      child: ListTile(
-                        leading: Icon(Icons.notifications_sharp),
-                        title: Text('Notification 6'),
-                        subtitle: Text('This is a notification'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Column(
-                  children: <Widget>[
-                    Card(
-                      child: ListTile(
-                        leading: Icon(Icons.notifications_sharp),
-                        title: Text('Notification 8'),
-                        subtitle: Text('This is a notification'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const PrivacyPolicyScreen(),
               const AboutUsScreen(),
               const FaqScreen(),

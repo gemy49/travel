@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:FlyHigh/providers/flight_provider.dart';
-import 'package:FlyHigh/widgets/flight_card.dart';
+import 'package:FlyHigh/screens/flights/flight_card.dart';
 
 class FlightsScreen extends StatefulWidget {
   const FlightsScreen({Key? key}) : super(key: key);

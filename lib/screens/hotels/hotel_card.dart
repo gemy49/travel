@@ -6,9 +6,42 @@ class HotelCard extends StatelessWidget {
 
   const HotelCard({Key? key, required this.hotel})
     : super(key: key);
+  String _formatPriceRange(dynamic priceData) {
+    if (priceData is List && priceData.isNotEmpty) {
+      try {
+        List<double> prices = priceData.map((p) => (p as num).toDouble()).toList();
+        double minPrice = prices.reduce((a, b) => a < b ? a : b);
+        double maxPrice = prices.reduce((a, b) => a > b ? a : b);
+        String minPriceFormatted = minPrice.toStringAsFixed(2);
+        if (minPriceFormatted.endsWith('.00')) {
+          minPriceFormatted = minPrice.toInt().toString();
+        }
+        if (minPrice == maxPrice) {
+          String singlePriceFormatted = maxPrice.toStringAsFixed(2);
+          if (singlePriceFormatted.endsWith('.00')) {
+            singlePriceFormatted = maxPrice.toInt().toString();
+          }
+          return '\$$singlePriceFormatted';
+        } else {
+          String maxPriceFormatted = maxPrice.toStringAsFixed(2);
+          if (maxPriceFormatted.endsWith('.00')) {
+            maxPriceFormatted = maxPrice.toInt().toString();
+          }
+          return '\$$minPriceFormatted~\$$maxPriceFormatted';
+        }
+      } catch (e) {
+        print("Error formatting price range: $e");
+        return "N/A";
+      }
+    } else {
+      return "N/A";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final List<int> price = hotel.availableRooms.map((room) => room.price).toList();
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       elevation: 5,
@@ -57,7 +90,7 @@ class HotelCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Price: \$${hotel.price}',
+                    'Price: (${_formatPriceRange(price)})',
                     style: TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.w600,
