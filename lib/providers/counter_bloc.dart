@@ -1,36 +1,33 @@
 // counter_bloc.dart
 import 'package:bloc/bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
+import '../services/api_service.dart';
 import '../services/storage_keys.dart';
-import 'counter_state.dart'; // Adjust import path if needed
-import 'package:shared_preferences/shared_preferences.dart'; // Add this import
-import 'dart:convert'; // Add this import
+import 'counter_state.dart';
 
 class CounterBloc extends Cubit<PageState> {
-
-  CounterBloc() : super(PageState(pageIndex: 0, id: 0, favoriteIds: [])) {
-    _loadFavoritesFromPreferences(); // Load user-specific favorites
+  CounterBloc()
+      : super(PageState(pageIndex: 0, id: 0, favoriteIds: [])) {
+    _loadFavoritesFromPreferences();
   }
+
   Future<void> _loadFavoritesFromPreferences() async {
     try {
       final String? userKey = await getUserSpecificKey('favorites_state');
-      if (userKey == null) return; // Handle missing email
+      if (userKey == null) return;
 
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final String? jsonString = prefs.getString(userKey);
+
       if (jsonString != null) {
         final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-        final PageState loadedState = PageState.fromJson(jsonMap);
-        // Emit the loaded state, updating the bloc's state
-        emit(loadedState);
-        print("State loaded from SharedPreferences: $loadedState");
-      } else {
-        print("No saved state found in SharedPreferences.");
-        // The initial state (defined in the constructor) remains
+        final List<int> loadedFavorites = List<int>.from(jsonMap['favoriteIds'] ?? []);
+        emit(state.copyWith(favoriteIds: loadedFavorites));
       }
     } catch (e) {
-      print("Error loading state from SharedPreferences: $e");
-      // Optionally, emit an error state or stick with the initial state
-      // emit(state); // Emitting current state is implicit, but you could emit an error state
+      print("Error loading favorites: $e");
     }
   }
 
@@ -38,18 +35,20 @@ class CounterBloc extends Cubit<PageState> {
   Future<void> _saveFavoritesToPreferences() async {
     try {
       final String? userKey = await getUserSpecificKey('favorites_state');
-      if (userKey == null) return; // Handle missing email
+      if (userKey == null) return;
 
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final String jsonString = jsonEncode(state.toJson());
-      await prefs.setString(userKey, jsonString);
-      print("User-specific favorites saved: ${state.favoriteIds} for key: $userKey");
-    }catch (e) {
-      print("Error saving state to SharedPreferences: $e");
-      // Optionally, show an error message to the user or log the error more formally
+      await prefs.setString(
+        userKey,
+        jsonEncode({
+          'favoriteIds': state.favoriteIds,
+        }),
+      );
+
+    } catch (e) {
+      print("Error saving state: $e");
     }
   }
-  // --- End persistence logic ---
 
   void updatePage(int index) {
     emit(state.copyWith(pageIndex: index));
@@ -59,17 +58,34 @@ class CounterBloc extends Cubit<PageState> {
     emit(state.copyWith(id: newId));
   }
 
-  void toggleFavorite(int flightId) {
-    // Create a new list based on the current state's favorites
+  Future<void> toggleFavorite(int flightId) async {
     final List<int> currentFavorites = List<int>.from(state.favoriteIds);
-    if (currentFavorites.contains(flightId)) {
-      currentFavorites.remove(flightId);
-    } else {
-      currentFavorites.add(flightId);
+
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('email') ?? '';
+    if (email.isEmpty) return;
+
+    try {
+      if (currentFavorites.contains(flightId)) {
+        await ApiService().removeFavorite(
+          email: email,
+          id: flightId.toString(),
+          type: "flight",
+        );
+        currentFavorites.remove(flightId);
+      } else {
+        await ApiService().addFavorite(
+          email: email,
+          id: flightId.toString(),
+          type: "flight",
+        );
+        currentFavorites.add(flightId);
+      }
+
+      emit(state.copyWith(favoriteIds: currentFavorites));
+      _saveFavoritesToPreferences();
+    } catch (e) {
+      print("❌ Failed to toggle favorite: $e");
     }
-    // Emit a new state with the updated favorites list
-    emit(state.copyWith(favoriteIds: currentFavorites));
-    // Save the updated favorites to local storage
-    _saveFavoritesToPreferences();
   }
 }

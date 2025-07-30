@@ -1,10 +1,8 @@
-// lib/screens/my_hotels_screen.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:FlyHigh/models/hotel.dart';
-
-import '../../services/storage_keys.dart'; // Adjust path
+import '../../models/MyHotels.dart';
+import '../../services/api_service.dart';
 
 class MyHotelsScreen extends StatefulWidget {
   const MyHotelsScreen({Key? key}) : super(key: key);
@@ -13,235 +11,277 @@ class MyHotelsScreen extends StatefulWidget {
   State<MyHotelsScreen> createState() => _MyHotelsScreenState();
 }
 
-class _MyHotelsScreenState extends State<MyHotelsScreen> {
-  List<Map<String, dynamic>> _hotelBookings = [];
+class _MyHotelsScreenState extends State<MyHotelsScreen>
+    with SingleTickerProviderStateMixin {
+  List<HotelBooking> _hotelBookings = [];
   bool _isLoading = true;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _loadHotelBookings();
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(_animationController);
   }
 
-// Inside MyHotelsScreen state class
-// import 'path/to/utils/storage_keys.dart'; // Adjust import path
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadHotelBookings() async {
-    setState(() {
-      _isLoading = true; // Show loading indicator while fetching
-    });
+    setState(() => _isLoading = true);
+
     try {
-      // --- Use user-specific key ---
-      final String? userKey = await getUserSpecificKey('hotel_bookings');
-      if (userKey == null) {
-        // Handle case where user email is not found
-        print("Could not load hotel bookings: User email not found.");
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('email');
+      print("Email from prefs: $email");
+
+      if (email == null) {
         setState(() {
-          _hotelBookings = []; // Show empty list or an error message in UI
+          _hotelBookings = [];
           _isLoading = false;
         });
         return;
       }
-      // --- End user-specific key ---
 
-      final prefs = await SharedPreferences.getInstance();
-      // --- Use userKey instead of hardcoded 'hotel_bookings' ---
-      final List<String>? hotelBookingsJsonList = prefs.getStringList(userKey);
-      // --- End change ---
-      if (hotelBookingsJsonList != null) {
-        List<Map<String, dynamic>> loadedBookings = [];
-        for (String bookingJson in hotelBookingsJsonList) {
-          try {
-            Map<String, dynamic> bookingMap = jsonDecode(bookingJson);
-            loadedBookings.add(bookingMap);
-          } catch (e) {
-            print("Error decoding a hotel booking JSON: $e");
-            // Optionally, remove corrupt entries or handle them differently
-          }
-        }
-        setState(() {
-          _hotelBookings = loadedBookings;
-        });
-      } else {
-        // Handle case where no bookings exist for this user key
-        setState(() {
-          _hotelBookings = [];
-        });
-      }
-    } catch (e) {
-      print("Error loading hotel bookings: $e");
-      // Optionally, show an error message to the user
+      final bookingsJson = await ApiService().getUserHotelBookings(email);
+      print("Bookings JSON from API: $bookingsJson");
       setState(() {
-        // _hotelBookings remains previous value or empty
-        // Optionally set an error message variable to display in UI
+        _hotelBookings = List<HotelBooking>.from(bookingsJson);
       });
+    } catch (e) {
+      print("Error loading bookings: $e");
     } finally {
       setState(() {
         _isLoading = false;
+        _animationController.forward();
       });
     }
   }
-  // Optional: Function to clear all hotel bookings (useful for testing)
-  Future<void> _clearAllHotelBookings() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('hotel_bookings');
-    setState(() {
-      _hotelBookings = [];
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("All hotel bookings cleared")),
-    );
+
+
+  Future<void> _deleteBooking(int index) async {
+    final booking = _hotelBookings[index];
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('email');
+
+      if (email == null) return;
+
+      await ApiService()
+          .cancelHotelBooking(email: email, bookingId: booking.bookingId);
+
+      setState(() {
+        _hotelBookings.removeAt(index);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Booking deleted successfully")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Failed to delete booking: $e")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = Colors.blue.shade500; // Use consistent color
+    final primaryColor = Theme.of(context).primaryColor;
+    final scaffoldBackgroundColor =
+        Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Hotels"),
-        foregroundColor: Colors.black,
-
+        title: const Text(
+          "My Hotel Bookings",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
       ),
+      backgroundColor: scaffoldBackgroundColor,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _hotelBookings.isEmpty
-          ? const Center(
-        child: Text(
-          "No hotels booked yet.",
-          style: TextStyle(fontSize: 18),
-        ),
-      )
-          : ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: _hotelBookings.length,
-        itemBuilder: (context, index) {
-          final bookingData = _hotelBookings[index];
-          final hotelData = bookingData['hotel'];
-          final List<dynamic> selectedRoomsData = bookingData['selectedRooms'];
-          final double totalPrice = bookingData['totalPrice'] is num ? (bookingData['totalPrice'] as num).toDouble() : 0.0;
+          ? _buildEmptyState()
+          : FadeTransition(
+        opacity: _fadeAnimation,
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12.0, vertical: 16.0),
+          itemCount: _hotelBookings.length,
+          itemBuilder: (context, index) {
+            final booking = _hotelBookings[index];
 
-          // Create a basic Hotel object from the map data for easier handling
-          // We only need essential info for display
-          Hotel? hotel;
-          try {
-            hotel = Hotel(
-              id: hotelData['id'] as int? ?? 0,
-              city: hotelData['city'] as String? ?? 'Unknown City',
-              location: hotelData['location'] as String? ?? '', // Might be empty
-              name: hotelData['name'] as String? ?? 'Unknown Hotel',
-              // availableRooms: [], // Not stored/recreated here
-              onSale: false, // Default or not relevant for past bookings?
-              rate: (hotelData['rate'] is num) ? (hotelData['rate'] as num).toDouble() : 0.0,
-              image: hotelData['image'] as String? ?? '', // Filename
-              description: hotelData['description'] as String? ?? '',
-              amenities: [], // Default or not relevant for past bookings?
+            final hotel = Hotel(
+              id: booking.hotelId,
+              city: booking.city,
+              location: '',
+              name: booking.hotelName,
+              onSale: false,
+              rate: 0,
+              image: '',
+              description: '',
+              amenities: [],
               contact: {},
-              availableRooms: [], // Default or not relevant for past bookings?
+              availableRooms: [],
             );
-          } catch (e) {
-            print("Error creating Hotel object from data: $e");
-            // Return a placeholder or error widget for this item
-            return Card(
-              margin: const EdgeInsets.only(bottom: 15),
-              child: ListTile(
-                title: const Text("Error loading hotel booking"),
-                subtitle: Text("Details might be corrupted: $e"),
-              ),
-            );
-          }
 
-          return _buildHotelBookingCard(
-            context,
-            hotel!,
-            selectedRoomsData.cast<Map<String, dynamic>>(), // Ensure correct typing
-            totalPrice,
-            primaryColor,
-          );
-        },
+            return _buildHotelBookingCard(
+              context,
+              hotel,
+              booking.rooms,
+              booking.totalCost,
+              primaryColor,
+              index,
+            );
+          },
+        ),
       ),
     );
   }
 
-  // Helper Widget: Builds a card for a single hotel booking
-  Widget _buildHotelBookingCard(BuildContext context, Hotel hotel, List<Map<String, dynamic>> selectedRooms, double totalPrice, Color primaryColor) {
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.hotel_outlined, size: 60, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          const Text("No hotels booked yet.",
+              style: TextStyle(fontSize: 18, color: Colors.grey)),
+          const SizedBox(height: 8),
+          Text(
+            "Explore hotels and make your first booking!",
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHotelBookingCard(
+      BuildContext context,
+      Hotel hotel,
+      List<BookedRoom> selectedRooms,
+      double totalPrice,
+      Color primaryColor,
+      int index,
+      ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hotel Name Header
+            // Header
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.hotel, color: primaryColor),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    hotel.name,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor),
-                    overflow: TextOverflow.ellipsis, // Handle long names
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
+                  child: Icon(Icons.hotel, color: primaryColor, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(hotel.name,
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(hotel.city,
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey[600])),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      color: Colors.redAccent),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("Confirm Deletion"),
+                        content: const Text(
+                            "Are you sure you want to delete this hotel booking?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text("Cancel"),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _deleteBooking(index);
+                            },
+                            child: const Text("Delete"),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
-            const SizedBox(height: 5),
-            Text(
-              hotel.city,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
+            const SizedBox(height: 16),
+            Divider(color: Colors.grey[300], thickness: 0.8),
+            const SizedBox(height: 16),
+            const Text("Booked Rooms",
+                style:
+                TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
-            const Divider(height: 1, thickness: 1),
-            const SizedBox(height: 10),
-
-            // Selected Rooms Summary
-            const Text(
-              "Booked Rooms:",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 5),
-            ...selectedRooms.map((roomData) {
-              final String type = roomData['type'] as String? ?? 'Unknown Room';
-              final int quantity = roomData['quantity'] as int? ?? 0;
-              // final double pricePerNight = roomData['pricePerNight'] is num ? (roomData['pricePerNight'] as num).toDouble() : 0.0;
-              final double totalPriceForType = roomData['totalPriceForType'] is num ? (roomData['totalPriceForType'] as num).toDouble() : 0.0;
-
+            ...selectedRooms.map((room) {
               return Padding(
-                padding: const EdgeInsets.only(bottom: 4.0),
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Row(
                   children: [
-                    Text(
-                      "$quantity x $type",
-                      style: const TextStyle(fontSize: 15),
-                    ),
-                    const Spacer(),
-                    Text(
-                      "\$${totalPriceForType.toStringAsFixed(2)}",
-                      style: const TextStyle(fontSize: 15),
-                    ),
+                    Expanded(
+                        child: Text("${room.quantity} x ${room.type}")),
                   ],
                 ),
               );
             }).toList(),
-            const SizedBox(height: 10),
-            const Divider(height: 1, thickness: 1),
-            const SizedBox(height: 10),
-
-            // Total Price Summary
+            const SizedBox(height: 16),
+            Divider(color: Colors.grey[300], thickness: 0.8),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Total Paid:",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Text(
-                  "\$${totalPrice.toStringAsFixed(2)}",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green),
-                ),
+                const Text("Total Paid:",
+                    style:
+                    TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                Text("\$${totalPrice.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green)),
               ],
             ),
           ],

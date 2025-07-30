@@ -376,13 +376,13 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  // Display available rooms with selection UI
                   ...hotel.availableRooms.map((room) {
-                    final int selectedQuantity =
-                        _selectedRoomQuantities[room.type] ?? 0;
-                    return _buildRoomSelectionRow(
-                        room, selectedQuantity, primaryColor);
+                    final int selectedQuantity = _selectedRoomQuantities[room.type] ?? 0;
+                    return _buildRoomTypeCard(room, selectedQuantity, primaryColor);
                   }).toList(),
                   const SizedBox(height: 10),
+                  // Display Total Price
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -543,67 +543,121 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 
   // --- Helper Widgets (as before, using local variables) ---
-  Widget _buildRoomSelectionRow(
-      dynamic room, int selectedQuantity, Color primaryColor) {
+  Widget _buildRoomTypeCard(dynamic room, int selectedQuantity, Color primaryColor) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 15), // Space between room cards
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: primaryColor.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                room.type,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              Text(
-                '\$${room.price.toStringAsFixed(2)} per night',
-                style: const TextStyle(fontSize: 14, color: Colors.black54),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: Icon(Icons.remove_circle_outline, color: primaryColor),
-                onPressed: () {
-                  _updateRoomQuantity(room.type, -1);
-                },
-              ),
-              Container(
-                width: 40,
-                alignment: Alignment.center,
-                child: Text(
-                  '$selectedQuantity',
-                  style: const TextStyle(fontSize: 18),
-                ),
-              ),
-              IconButton(
-                icon: Icon(Icons.add_circle_outline, color: primaryColor),
-                onPressed: () {
-                  if (selectedQuantity < room.quantity) {
-                    _updateRoomQuantity(room.type, 1);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            'Only ${room.quantity} ${room.type}(s) available.'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                  }
-                },
-              ),
-            ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor), // Rounded corners
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1), // Subtle shadow
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Room Type Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  room.type,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor, // Use primary color for the type
+                  ),
+                ),
+                // Display available quantity
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200, // Light background for quantity
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Available: ${room.quantity}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Price per Night
+            Text(
+              '\$${room.price.toStringAsFixed(2)} per night',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Quantity Selector
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Quantity:",
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                Row(
+                  children: [
+                    // Minus Button
+                    IconButton(
+                      icon: Icon(
+                        Icons.remove_circle_outline,
+                        color: selectedQuantity > 0 ? primaryColor : Colors.grey,
+                      ),
+                      onPressed: selectedQuantity > 0
+                          ? () {
+                        _updateRoomQuantity(room.type, -1);
+                      }
+                          : null, // Disable if quantity is 0
+                    ),
+                    // Quantity Display
+                    Container(
+                      width: 40,
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$selectedQuantity',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    // Plus Button
+                    IconButton(
+                      icon: Icon(
+                        Icons.add_circle_outline,
+                        color: selectedQuantity < room.quantity
+                            ? primaryColor
+                            : Colors.grey, // Disable if max quantity reached
+                      ),
+                      onPressed: selectedQuantity < room.quantity
+                          ? () {
+                        _updateRoomQuantity(room.type, 1);
+                      }
+                          : null, // Disable if max quantity reached
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -638,22 +692,3 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 }
 
-// --- Add this helper to your Hotel model or as a separate utility ---
-// In your hotel.dart model file, you might want to add this for the fallback:
-// class Hotel {
-//   // ... existing fields ...
-//   Hotel.empty() // Named constructor for empty state
-//       : id = 0,
-//         city = '',
-//         location = '',
-//         name = '',
-//         availableRooms = [],
-//         onSale = false,
-//         rate = 0.0,
-//         image = '',
-//         description = '',
-//         amenities = [],
-//         contact = {};
-//
-//   // ... rest of Hotel class ...
-// }

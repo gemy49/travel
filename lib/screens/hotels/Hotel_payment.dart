@@ -6,6 +6,7 @@ import 'package:FlyHigh/models/hotel_booking_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/hotel.dart';
+import '../../services/api_service.dart';
 import '../../services/storage_keys.dart'; // Adjust path if needed
 
 class HotelPaymentScreen extends StatefulWidget {
@@ -301,73 +302,72 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                   // Disable the button if booking is in progress
                   onPressed: _isBookingInProgress
                       ? null
-                      : () {
+                      : () async {
                     if (_formKey.currentState!.validate()) {
-                      // --- ADD THIS DEBUGGING LINE ---
                       final String debugId = DateTime.now().millisecondsSinceEpoch.toString();
-                      print("Hotel Payment: Initiating save with debug ID: $debugId");
-                      // --- END ADDITION ---
                       setState(() {
                         _isBookingInProgress = true;
                       });
 
-                      // --- Simulate Booking & Payment Processing & Save ---
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("✅ Processing booking for ${hotel.name} and saving..."),
-                          backgroundColor: Colors.blue,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+                      try {
+                        // 1️⃣ احجز الغرف على السيرفر
+                        for (var room in selectedRooms) {
+                          await ApiService().bookHotel(
+                            hotelId: hotel.id,
+                            roomType: room['type'],
+                            quantity: room['quantity'],
+                          );
+                        }
 
-                      // Collect user info, process payment...
-                      print("Booking confirmed for ${hotel.name}");
-                      // ... process payment ...
+                        // 2️⃣ أرسل بيانات الحجز إلى المستخدم في الـ backend
+                        await ApiService().addHotelBookingForUser(
+                          email: _emailController.text.trim(),
+                          bookingData: {
+                            "bookingId": debugId,
+                            "hotelId": hotel.id,
+                            "hotelName": hotel.name,
+                            "city": hotel.city,
+                            "rooms": selectedRooms
+                                .map((room) => {
+                              "type": room['type'],
+                              "count": room['quantity'],
+                            })
+                                .toList(),
+                            "totalCost": totalPrice,
+                            "fullName": _nameController.text.trim(),
+                            "phone": _phoneController.text.trim(),
+                            "bookingDate": DateTime.now().toIso8601String()
+                          },
+                        );
 
-                      // Call the save function
-                       _saveHotelBookingToLocalStorage(debugId: debugId).then((_) { // Modify function signature if passing ID
-                        print("Hotel Payment: Save completed for debug ID: $debugId");
+                        // 3️⃣ خزّن نسخة محليًا
+                        await _saveHotelBookingToLocalStorage(debugId: debugId);
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text("✅ Booking confirmed for ${hotel.name} & saved!"),
                             backgroundColor: Colors.green,
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 3),
                           ),
                         );
 
-                        // --- Clear Form Fields ---
-                        // ... (clear controllers and reset form) ...
-
-                        // --- Navigate after saving ---
-                        // Example: Navigate to the My Hotels screen
                         Navigator.pushReplacementNamed(context, '/BottomNavigationBar');
-                        // Or pop back:
-                        // Navigator.of(context).pop(); // Pop HotelPaymentScreen
-                        // Navigator.of(context).pop(); // Pop HotelDetailsScreen
 
-                      }).catchError((error) {
-                         print("Hotel Payment: Save failed for debug ID: $debugId, Error: $error");
-                        print("Failed to save hotel booking: $error");
+                      } catch (error) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Booking confirmed, but failed to save locally: $error"),
-                            backgroundColor: Colors.orange,
+                            content: Text("❌ Booking failed: $error"),
+                            backgroundColor: Colors.red,
                           ),
                         );
-                        // Consider navigation even if saving failed?
-                        // Navigator.pushNamedAndRemoveUntil(context, '/my-hotels', (route) => false);
-
-                      }).whenComplete(() {
-                         print("Hotel Payment: Save operation finished (success/fail) for debug ID: $debugId");
-                        if (mounted) { // Check if the widget is still in the tree
-                          setState(() {
-                            _isBookingInProgress = false;
-                          });
-                        }
-                      });
+                      } finally {
+                        setState(() {
+                          _isBookingInProgress = false;
+                        });
+                      }
                     }
                   },
+
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     foregroundColor: Colors.white,
@@ -387,7 +387,7 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                   )
                       : const Icon(Icons.check_circle, size: 24),
                   label: Text(
-                    _isBookingInProgress ? "Processing..." : "Confirm Booking & Pay",
+                    _isBookingInProgress ? "Processing..." : "Confirm Booking ",
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),

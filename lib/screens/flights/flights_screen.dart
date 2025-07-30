@@ -14,12 +14,11 @@ class _FlightsScreenState extends State<FlightsScreen> {
   late TextEditingController _fromController;
   late TextEditingController _toController;
   late TextEditingController _dateController;
-  late TextEditingController _returnDateController;
-
+  // Remove _returnDateController
   String _fromQuery = '';
   String _toQuery = '';
   DateTime? _startDate;
-  DateTime? _endDate;
+  // Remove _endDate
 
   @override
   void initState() {
@@ -27,8 +26,7 @@ class _FlightsScreenState extends State<FlightsScreen> {
     _fromController = TextEditingController();
     _toController = TextEditingController();
     _dateController = TextEditingController();
-    _returnDateController = TextEditingController();
-
+    // Remove _returnDateController initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final flightProvider = Provider.of<FlightProvider>(
         context,
@@ -43,7 +41,7 @@ class _FlightsScreenState extends State<FlightsScreen> {
     _fromController.dispose();
     _toController.dispose();
     _dateController.dispose();
-    _returnDateController.dispose();
+    // Remove _returnDateController dispose
     super.dispose();
   }
 
@@ -54,16 +52,14 @@ class _FlightsScreenState extends State<FlightsScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-
     if (picked != null) {
       setState(() {
         if (isStart) {
           _startDate = picked;
-          _dateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-        } else {
-          _endDate = picked;
-          _returnDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+          _dateController.text =
+          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
         }
+        // Remove _endDate logic
       });
     }
   }
@@ -73,13 +69,14 @@ class _FlightsScreenState extends State<FlightsScreen> {
       _fromController.clear();
       _toController.clear();
       _dateController.clear();
-      _returnDateController.clear();
+      // Remove _returnDateController clear
       _fromQuery = '';
       _toQuery = '';
       _startDate = null;
-      _endDate = null;
+      // Remove _endDate = null
     });
   }
+
   void _clearSpecificFilter(String filterType) {
     setState(() {
       switch (filterType) {
@@ -95,18 +92,14 @@ class _FlightsScreenState extends State<FlightsScreen> {
           _startDate = null;
           _dateController.clear();
           break;
-        case 'return':
-          _endDate = null;
-          _returnDateController.clear();
-          break;
+      // Remove 'return' case
       }
     });
   }
 
-
   bool _isDateInRange(String flightDate) {
-    if (_startDate == null && _endDate == null) return true;
-
+    // Simplify date range check since there's only a start date now
+    if (_startDate == null) return true; // If no start date selected, show all
     try {
       List<String> dateParts = flightDate.split('-');
       DateTime flightDateTime = DateTime(
@@ -114,58 +107,31 @@ class _FlightsScreenState extends State<FlightsScreen> {
         int.parse(dateParts[1]),
         int.parse(dateParts[2]),
       );
-
-      // Set time to start of day for comparison
-      DateTime flightDateOnly = DateTime(flightDateTime.year, flightDateTime.month, flightDateTime.day);
-
-      bool afterStart = _startDate == null || flightDateOnly.isAfter(_startDate!.subtract(Duration(days: 1)));
-      bool beforeEnd = _endDate == null || flightDateOnly.isBefore(_endDate!.add(Duration(days: 1)));
-
-      return afterStart && beforeEnd;
+      // Check if flight date is on or after the selected start date
+      DateTime flightDateOnly =
+      DateTime(flightDateTime.year, flightDateTime.month, flightDateTime.day);
+      bool isOnOrAfter = flightDateOnly
+          .isAfter(_startDate!.subtract(const Duration(days: 1))); // Include start date
+      return isOnOrAfter;
     } catch (e) {
       print("Date parsing error: $e");
-      return true;
-    }
-  }
-
-  bool _isReturnDateInRange(String flightReturnDate) {
-    if (_startDate == null && _endDate == null) return true;
-
-    try {
-      List<String> dateParts = flightReturnDate.split('-');
-      DateTime flightReturnDateTime = DateTime(
-        int.parse(dateParts[0]),
-        int.parse(dateParts[1]),
-        int.parse(dateParts[2]),
-      );
-
-      // Set time to start of day for comparison
-      DateTime flightReturnDateOnly = DateTime(flightReturnDateTime.year, flightReturnDateTime.month, flightReturnDateTime.day);
-
-      bool afterStart = _startDate == null || flightReturnDateOnly.isAfter(_startDate!.subtract(Duration(days: 1)));
-      bool beforeEnd = _endDate == null || flightReturnDateOnly.isBefore(_endDate!.add(Duration(days: 1)));
-
-      return afterStart && beforeEnd;
-    } catch (e) {
-      print("Return Date parsing error: $e");
-      return true;
+      return true; // Show flight if date parsing fails
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final flightProvider = Provider.of<FlightProvider>(context);
+    // Update filtering logic to not consider return date
     final filteredFlights = flightProvider.flights.where((flight) {
-      bool matchesFrom = flight.from.toLowerCase().contains(_fromQuery.toLowerCase());
-      bool matchesTo = flight.to.toLowerCase().contains(_toQuery.toLowerCase());
-
-      // Check if the flight's date is within the selected range
+      bool matchesFrom =
+      flight.from.toLowerCase().contains(_fromQuery.toLowerCase());
+      bool matchesTo =
+      flight.to.toLowerCase().contains(_toQuery.toLowerCase());
+      // Check if the flight's date is within the selected range (only start date now)
       bool matchesDateRange = _isDateInRange(flight.date);
-
-      // Check if the flight's returnDate is within the selected range
-      bool matchesReturnDateRange = _isReturnDateInRange(flight.returnDate ?? '');
-
-      return matchesFrom && matchesTo && matchesDateRange && matchesReturnDateRange;
+      // No return date filter anymore
+      return matchesFrom && matchesTo && matchesDateRange;
     }).toList();
 
     return Container(
@@ -180,9 +146,12 @@ class _FlightsScreenState extends State<FlightsScreen> {
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 children: [
-                  if (_fromQuery.isNotEmpty || _toQuery.isNotEmpty || _startDate != null || _endDate != null)
+                  // Update filter chips to remove return date chip
+                  if (_fromQuery.isNotEmpty ||
+                      _toQuery.isNotEmpty ||
+                      _startDate != null) // Remove _endDate != null
                     Container(
-                      margin: EdgeInsets.only(top: 10),
+                      margin: const EdgeInsets.only(top: 10),
                       child: Row(
                         children: [
                           Expanded(
@@ -199,28 +168,29 @@ class _FlightsScreenState extends State<FlightsScreen> {
                                 if (_toQuery.isNotEmpty)
                                   Chip(
                                     label: Text("To: $_toQuery"),
-                                    backgroundColor:Colors.white,
+                                    backgroundColor: Colors.white,
                                     onDeleted: () => _clearSpecificFilter('to'),
                                   ),
-                                if (_startDate != null)
+                                if (_startDate != null) // Remove _endDate != null chip
                                   Chip(
-                                    label: Text("Start: ${_dateController.text}"),
-                                    backgroundColor:Colors.white,
+                                    label: Text("Date: ${_dateController.text}"),
+                                    backgroundColor: Colors.white,
                                     onDeleted: () => _clearSpecificFilter('date'),
                                   ),
-                                if (_endDate != null)
-                                  Chip(
-                                    label: Text("End: ${_returnDateController.text}"),
-                                    backgroundColor:Colors.white,
-                                    onDeleted: () => _clearSpecificFilter('return'),
-                                  ),
+                                // Removed "End: ..." chip
                               ],
                             ),
                           ),
-                          if (_fromQuery.isNotEmpty || _toQuery.isNotEmpty || _startDate != null || _endDate != null)
+                          // Update clear button logic if needed (it already works)
+                          if (_fromQuery.isNotEmpty ||
+                              _toQuery.isNotEmpty ||
+                              _startDate != null) // Remove _endDate != null check if it was here
                             TextButton(
                               onPressed: _clearAllFilters,
-                              child: Text("Clear All",style: TextStyle(color: Colors.blue.shade500)),
+                              child: Text(
+                                "Clear All",
+                                style: TextStyle(color: Colors.blue.shade500),
+                              ),
                             ),
                         ],
                       ),
@@ -229,17 +199,19 @@ class _FlightsScreenState extends State<FlightsScreen> {
                   TextField(
                     controller: _fromController,
                     decoration: InputDecoration(
-                      hintText: "Where are you flying from?",
-                      prefixIcon: Icon(Icons.flight_takeoff),
+                      hintText: "Where from?",
+                      prefixIcon: const Icon(Icons.flight_takeoff),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                        borderSide:
+                        BorderSide(color: Colors.blue.shade400, width: 2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                        borderSide:
+                        BorderSide(color: Colors.blue.shade400, width: 2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       filled: true,
@@ -256,16 +228,18 @@ class _FlightsScreenState extends State<FlightsScreen> {
                     controller: _toController,
                     decoration: InputDecoration(
                       hintText: "Where do you want to go?",
-                      prefixIcon: Icon(Icons.flight_land),
+                      prefixIcon: const Icon(Icons.flight_land),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                        borderSide:
+                        BorderSide(color: Colors.blue.shade400, width: 2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                        borderSide:
+                        BorderSide(color: Colors.blue.shade400, width: 2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       filled: true,
@@ -278,64 +252,41 @@ class _FlightsScreenState extends State<FlightsScreen> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  // Date filters row
+                  // Update date filter row to only have Start Date
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _dateController,
                           decoration: InputDecoration(
-                            hintText: "Start Date",
-                            prefixIcon: Icon(Icons.calendar_today),
+                            hintText: " Date", // Only "Start Date"
+                            prefixIcon: const Icon(Icons.calendar_today),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                              borderSide: BorderSide(
+                                  color: Colors.blue.shade400, width: 2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                              borderSide: BorderSide(
+                                  color: Colors.blue.shade400, width: 2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
                           readOnly: true,
-                          onTap: () => _selectDate(context, true),
+                          onTap: () => _selectDate(context, true), // Only select start date
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _returnDateController,
-                          decoration: InputDecoration(
-                            hintText: "End Date",
-                            prefixIcon: Icon(Icons.calendar_today),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                          ),
-                          readOnly: true,
-                          onTap: () => _selectDate(context, false),
-                        ),
-                      ),
+                      // Removed the Expanded widget for Return Date
                     ],
                   ),
                 ],
               ),
             ),
-
             filteredFlights.isEmpty
                 ? const Center(
               child: Padding(
@@ -350,7 +301,7 @@ class _FlightsScreenState extends State<FlightsScreen> {
               ),
             )
                 : ListView.builder(
-              physics: NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               itemCount: filteredFlights.length,
               itemBuilder: (context, index) {
@@ -363,14 +314,12 @@ class _FlightsScreenState extends State<FlightsScreen> {
                       arguments: flight,
                     );
                   },
-                  child: FlightCard(
-                    flight: flight,
-                  ),
+                  child: FlightCard(flight: flight),
                 );
               },
             ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }

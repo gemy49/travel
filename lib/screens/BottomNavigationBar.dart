@@ -1,6 +1,5 @@
 import 'package:FlyHigh/screens/Favorite.dart';
 import 'package:FlyHigh/screens/SideMenu/about_us_screen.dart';
-import 'package:FlyHigh/screens/SideMenu/contact_us_screen.dart';
 import 'package:FlyHigh/screens/SideMenu/faq_screen.dart';
 import 'package:FlyHigh/screens/flights/flights_screen.dart';
 import 'package:FlyHigh/screens/hotels/hotels_screen.dart';
@@ -158,7 +157,7 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                           leading: Icon(Icons.menu_book),
                           title: Text('Privacy and Policy'),
                           onTap: () {
-                            cubit.updatePage(7);
+                            cubit.updatePage(5);
                             Navigator.pop(context);
                           },
                         ),
@@ -166,7 +165,7 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                           leading: Icon(Icons.groups),
                           title: Text('About Us'),
                           onTap: () {
-                            cubit.updatePage(8);
+                            cubit.updatePage(6);
                             Navigator.pop(context);
                           },
                         ),
@@ -174,7 +173,7 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                           leading: Icon(Icons.question_mark_rounded),
                           title: Text('FAQ'),
                           onTap: () {
-                            cubit.updatePage(9);
+                            cubit.updatePage(7);
                             Navigator.pop(context);
                           },
                         ),
@@ -234,13 +233,12 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
             body: <Widget>[
               HomeScreen(),
               const FlightsScreen(),
-              const HotelsScreen(city: "Dubai"),
+              const HotelsScreen(),
               CitiesPage(),
               const FavoriteFlightsScreen(),
               const PrivacyPolicyScreen(),
               const AboutUsScreen(),
               const FaqScreen(),
-              const ContactUsScreen(),
             ][currentIndex],
           );
         },

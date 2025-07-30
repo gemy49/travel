@@ -4,9 +4,9 @@ import 'package:FlyHigh/providers/hotel_provider.dart';
 import 'package:FlyHigh/screens/hotels/hotel_card.dart';
 
 class HotelsScreen extends StatefulWidget {
-  final String city;
+  final String? city;
 
-  const HotelsScreen({Key? key, required this.city}) : super(key: key);
+  const HotelsScreen({Key? key,  this.city}) : super(key: key);
 
   @override
   State<HotelsScreen> createState() => _HotelsScreenState();

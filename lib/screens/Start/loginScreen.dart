@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../services/api_service.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -29,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-
+      await ApiService().createOrUpdateUserOnServer(emailController.text.trim());
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('IsLoggedIn', true);
       await prefs.setString('email', emailController.text);
@@ -48,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         isLoading = false;
       });
+
     }
   }
 

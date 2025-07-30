@@ -107,7 +107,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                               widget.flight.from, primaryColor),
                           _infoRow(Icons.flight_land, 'To', widget.flight.to, primaryColor),
                           _infoRow(Icons.date_range, 'Departure Date', widget.flight.date, primaryColor),
-                          _infoRow(Icons.date_range, 'Return Date', widget.flight.returnDate, primaryColor),
                           _infoRow(Icons.access_time, 'Departure Time', widget.flight.departureTime, primaryColor),
                           _infoRow(Icons.access_time, 'Arrival Time', widget.flight.arrivalTime, primaryColor),
                           _infoRow(Icons.monetization_on, 'Base Price (Adult)', '\$${widget.flight.price}', primaryColor), // Clarify adult price

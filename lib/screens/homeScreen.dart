@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/counter_bloc.dart';
-import '../providers/hotel_provider.dart';
 import '../providers/videoPlayer.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -69,7 +68,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     var cubit = context.read<CounterBloc>();
-
     return LayoutBuilder(
       builder: (context, constraints) {
         return Padding(
