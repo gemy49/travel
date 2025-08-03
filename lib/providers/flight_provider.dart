@@ -9,7 +9,7 @@ class FlightProvider with ChangeNotifier {
   Future<void> fetchFlights({String? from, String? to, String? date ,String? returnDate}) async {
     try {
       final api = ApiService();
-      _flights = await api.getFlights(from: from, to: to, date: date ,returnDate:returnDate);
+      _flights = await api.getFlights(from: from, to: to, date: date );
       notifyListeners();
       print('Fetching flights to $to');
       print('Fetched flights: $_flights');

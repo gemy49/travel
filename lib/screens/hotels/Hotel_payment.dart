@@ -312,16 +312,27 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                       try {
                         // 1️⃣ احجز الغرف على السيرفر
                         for (var room in selectedRooms) {
-                          await ApiService().bookHotel(
-                            hotelId: hotel.id,
-                            roomType: room['type'],
-                            quantity: room['quantity'],
+                          await ApiService().addHotelBookingForUser(
+                            bookingData: {
+                              "bookingId": DateTime.now().millisecondsSinceEpoch.toString(), // ID فريد للحجز
+                              "hotelId": hotel.id,
+                              "hotelName": hotel.name,
+                              "city": hotel.city,
+                              "rooms": [
+                                {
+                                  "type": room['type'],
+                                  "count": room['quantity'],
+                                }
+                              ],
+                              "totalCost": totalPrice, // أو أي حساب مناسب
+                              "bookingDate": DateTime.now().toIso8601String(),
+                            },
                           );
                         }
 
+
                         // 2️⃣ أرسل بيانات الحجز إلى المستخدم في الـ backend
                         await ApiService().addHotelBookingForUser(
-                          email: _emailController.text.trim(),
                           bookingData: {
                             "bookingId": debugId,
                             "hotelId": hotel.id,

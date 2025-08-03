@@ -68,7 +68,7 @@ class FlightCard extends StatelessWidget {
                 final bool isFavorite = state.favoriteIds.contains(flight.id);
                 return IconButton(
                   onPressed: () {
-                    context.read<CounterBloc>().toggleFavorite(flight.id);
+                    context.read<CounterBloc>().toggleFavorite(flight.id,flight);
                   },
                   icon: Icon(
                     isFavorite

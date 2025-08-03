@@ -71,7 +71,6 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
 
 
       await ApiService().bookFlight(
-          email,
           bookingData: {
             "flightId": flight.id, // ID من الـ Flight نفسه
             "adults": numberOfAdults,

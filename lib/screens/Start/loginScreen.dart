@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 import '../../services/api_service.dart';
 
@@ -22,37 +23,43 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final result = await ApiService().loginUser(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-      await ApiService().createOrUpdateUserOnServer(emailController.text.trim());
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('IsLoggedIn', true);
-      await prefs.setString('email', emailController.text);
 
-      Navigator.pushReplacementNamed(context, '/BottomNavigationBar');
-    } on FirebaseAuthException catch (e) {
-      String message = 'Login failed';
-      if (e.code == 'user-not-found') {
-        message = 'No user found for that email.';
-      } else if (e.code == 'wrong-password') {
-        message = 'Wrong password provided.';
+      if (result['success']) {
+        final userData = result['data'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('IsLoggedIn', true);
+        await prefs.setString('token', userData['token']);
+        await prefs.setString('email', userData['user']['email']);
+        await prefs.setString('name', userData['user']['name']);
+        await prefs.setString('phone', userData['user']['phone']);
+        await prefs.setInt('userId', userData['user']['id']); // ✅ حفظ الـ userId
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Welcome ${userData['user']['name']}!")),
+        );
+        print('the id is ///////////////////////////${prefs.getInt("userId")}');
+        Navigator.pushReplacementNamed(context, '/BottomNavigationBar');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['error'])),
+        );
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An error occurred. Please try again.')),
+      );
     } finally {
-      setState(() {
-        isLoading = false;
-      });
-
+      setState(() => isLoading = false);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -86,10 +93,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: emailController,
                           style: const TextStyle(color: Color(0xFF3DB9EF)),
                           decoration: InputDecoration(
-                            label: const Text('Email', style: TextStyle(color: Colors.white)),
+                            label: const Text(
+                              'Email',
+                              style: TextStyle(color: Colors.white),
+                            ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Color(0xFF3DB9EF)),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF3DB9EF),
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -116,10 +128,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: pass,
                           style: const TextStyle(color: Color(0xFF3DB9EF)),
                           decoration: InputDecoration(
-                            label: const Text('Password', style: TextStyle(color: Colors.white)),
+                            label: const Text(
+                              'Password',
+                              style: TextStyle(color: Colors.white),
+                            ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Color(0xFF3DB9EF)),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF3DB9EF),
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -147,20 +164,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: constraints.maxHeight * 0.01),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            const Text('Don\'t have an account?', style: TextStyle(color: Colors.white)),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pushNamed(context, '/signup');
-                              },
-                              child: const Text('Sign Up', style: TextStyle(color: Color(0xFF3DB9EF))),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: constraints.maxHeight * 0.01),
+                        SizedBox(height: constraints.maxHeight * 0.02),
+
                         SizedBox(
                           width: constraints.maxHeight * 0.3,
                           child: ElevatedButton(
@@ -183,10 +188,30 @@ class _LoginScreenState extends State<LoginScreen> {
                             )
                                 : Text(
                               'Login',
-                              style: TextStyle(fontSize: constraints.maxHeight * 0.025),
+                              style: TextStyle(
+                                fontSize: constraints.maxHeight * 0.025,
+                              ),
                             ),
                           ),
                         ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Don\'t have an account?',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/signup'),
+                              child: const Text(
+                                'Sign Up',
+                                style: TextStyle(color: Color(0xFF3DB9EF)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: constraints.maxHeight * 0.01),
                       ],
                     ),
                   ),

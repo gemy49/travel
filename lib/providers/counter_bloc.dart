@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import '../models/flight.dart';
 import '../services/api_service.dart';
 import '../services/storage_keys.dart';
 import 'counter_state.dart';
@@ -58,7 +59,7 @@ class CounterBloc extends Cubit<PageState> {
     emit(state.copyWith(id: newId));
   }
 
-  Future<void> toggleFavorite(int flightId) async {
+  Future<void> toggleFavorite(int flightId,Flight flight) async {
     final List<int> currentFavorites = List<int>.from(state.favoriteIds);
 
     final prefs = await SharedPreferences.getInstance();
@@ -68,16 +69,23 @@ class CounterBloc extends Cubit<PageState> {
     try {
       if (currentFavorites.contains(flightId)) {
         await ApiService().removeFavorite(
-          email: email,
-          id: flightId.toString(),
+          favoriteId: flightId.toString(),
           type: "flight",
         );
         currentFavorites.remove(flightId);
       } else {
         await ApiService().addFavorite(
-          email: email,
-          id: flightId.toString(),
+          favoriteId: flightId.toString(),
           type: "flight",
+          airline: flight.airline,
+          flightNumber: flight.id,
+          from: flight.from,
+          to: flight.to,
+          price:  flight.price,
+          departureTime:flight.departureTime,
+          arrivalTime: flight.arrivalTime,
+          date: flight.date,
+
         );
         currentFavorites.add(flightId);
       }

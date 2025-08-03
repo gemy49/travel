@@ -447,6 +447,66 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
+                          'Contact',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        // Phone Number
+                        if (hotel.contact['phone'] != null &&
+                            hotel.contact['phone'].toString().isNotEmpty)
+                          _buildContactItem(
+                            icon: Icons.phone,
+                            label: 'Phone',
+                            value: hotel.contact['phone'].toString(),
+                            primaryColor: primaryColor,
+                            onTap: () {
+                              // Add phone call functionality here if needed
+                              launch('tel:${hotel.contact['phone']}');
+                              print("Phone tapped: ${hotel.contact['phone']}");
+                            },
+                          ),
+                        const SizedBox(height: 12),
+                        // Email Address
+                        if (hotel.contact['email'] != null &&
+                            hotel.contact['email'].toString().isNotEmpty)
+                          _buildContactItem(
+                            icon: Icons.email,
+                            label: 'Email',
+                            value: hotel.contact['email'].toString(),
+                            primaryColor: primaryColor,
+                            onTap: () {
+                              // Add email functionality here if needed
+                               launch('mailto:${hotel.contact['email']}');
+                              print("Email tapped: ${hotel.contact['email']}");
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
                           'Rating:',
                           style: TextStyle(
                             fontSize: 20,
@@ -692,3 +752,50 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 }
 
+Widget _buildContactItem({
+  required IconData icon,
+  required String label,
+  required String value,
+  required Color primaryColor,
+  VoidCallback? onTap, // Optional: Make it tappable
+}) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8), // Add tap feedback
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, color: primaryColor, size: 20),
+          const SizedBox(width: 12),
+          Text(
+            '$label:',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Optional: Add an arrow icon to indicate it's tappable
+          if (onTap != null)
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey[400],
+            ),
+        ],
+      ),
+    ),
+  );
+}
+// --- End of new

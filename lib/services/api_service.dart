@@ -1,4 +1,5 @@
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as shared_preferences;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/MyHotels.dart';
@@ -9,17 +10,82 @@ import '../models/hotel.dart';
 import '../models/weather.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.1.100:3000/api';
+  final String baseUrl = 'http://192.168.219.213:3000/api';
 
-  // Flights
+  // ===== Helper to get stored userId =====
+  Future<int?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId');
+  }
+  Future<String?> _Authorization() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+  Future<Map<String, dynamic>> registerUser({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+  }) async {
+    final url = Uri.parse('$baseUrl/register');
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'password': password,
+    });
+
+    final response = await http.post(url, headers: headers, body: body);
+    final responseData = jsonDecode(response.body);
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return {
+        'success': true,
+        'data': responseData,
+      };
+    } else {
+      return {
+        'success': false,
+        'error': responseData['error'] ?? 'Registration failed.',
+      };
+    }
+  }
+  Future<Map<String, dynamic>> loginUser({
+    required String email,
+    required String password,
+  }) async {
+    final url = Uri.parse('$baseUrl/login');
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({
+      'email': email,
+      'password': password,
+    });
+
+    final response = await http.post(url, headers: headers, body: body);
+    final responseData = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'data': responseData,
+      };
+    } else {
+      return {
+        'success': false,
+        'error': responseData['error'] ?? 'Login failed',
+      };
+    }
+  }
+
+  // ===== Flights =====
   Future<List<Flight>> getFlights({
     String? from,
     String? to,
     String? date,
-    String? returnDate,
   }) async {
     var url = Uri.parse('$baseUrl/flights');
-    if (from != null || to != null || date != null || returnDate != null) {
+    if (from != null || to != null || date != null) {
       url = Uri.parse('$baseUrl/flights?from=$from&to=$to&date=$date');
     }
     final response = await http.get(url);
@@ -31,16 +97,7 @@ class ApiService {
     }
   }
 
-  Future<void> addFlight(Flight flight) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/flights'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(flight.toJson()),
-    );
-    if (response.statusCode != 201) throw Exception('Failed to add flight');
-  }
-
-  // Hotels
+  // ===== Hotels =====
   Future<List<Hotel>> getHotels({String? city}) async {
     var url = Uri.parse('$baseUrl/hotels');
     if (city != null) {
@@ -55,16 +112,7 @@ class ApiService {
     }
   }
 
-  Future<void> addHotel(Hotel hotel) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/hotels'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(hotel.toJson()),
-    );
-    if (response.statusCode != 201) throw Exception('Failed to add hotel');
-  }
-
-  // Places
+  // ===== Places =====
   Future<List<Place>> getPlaces({String? city}) async {
     var url = Uri.parse('$baseUrl/places');
     if (city != null) {
@@ -78,9 +126,9 @@ class ApiService {
       throw Exception('Failed to load places');
     }
   }
+
   Future<List<City>> getCities() async {
     final response = await http.get(Uri.parse('$baseUrl/places'));
-
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       return data.map((json) => City.fromJson(json)).toList();
@@ -89,7 +137,224 @@ class ApiService {
     }
   }
 
-  // Weather Forecast
+  // ===== Favorites =====
+  Future<void> addFavorite({
+    required String favoriteId,
+    required String type,
+    required airline,
+    required flightNumber,
+    required from,
+    required to,
+    required departureTime,
+    required arrivalTime,
+    required date,
+    required price,
+  }) async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+    if (userId == null) throw Exception("User ID not found");
+
+    final url = Uri.parse("$baseUrl/users/$userId/favorites");
+
+    final response = await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "favoriteId": favoriteId, // ✅ مطابق مع Node API
+        "type": type,
+        "airline": airline,
+        "flightNumber": flightNumber,
+        "from": from,
+        "to": to,
+        "departureTime": departureTime,
+        "arrivalTime": arrivalTime,
+        "date": date,
+        "price": price,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to add favorite: ${response.body}");
+    }
+  }
+
+  Future<void> removeFavorite({
+    required String favoriteId,
+    required String type,
+  }) async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+
+    if (userId == null) throw Exception("User ID not found");
+
+    final url = Uri.parse("$baseUrl/users/$userId/favorites");
+
+    final response = await http.delete(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "favoriteId": favoriteId,
+        "type": type,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to remove favorite: ${response.body}");
+    }
+  }
+
+  Future<List<Favorite>> getUserFavorites() async {
+    final userId = await _getUserId();
+
+    if (userId == null) throw Exception("User ID not found");
+
+    final res = await http.get(Uri.parse("$baseUrl/users/$userId/favorites"));
+
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      return data.map((e) => Favorite.fromJson(e)).toList();
+    } else {
+      throw Exception("Failed to load favorites");
+    }
+  }
+
+  // ===== Flight Bookings =====
+  Future<List<dynamic>> getBookings() async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+
+    if (userId == null) throw Exception("User ID not found");
+    if (token == null) throw Exception("Token not found");
+
+    final res = await http.get(
+      Uri.parse("$baseUrl/users/$userId/bookings"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    } else {
+      throw Exception("Failed to load bookings: ${res.body}");
+    }
+  }
+
+
+  Future<void> bookFlight({
+    required Map<String, dynamic> bookingData,
+  }) async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+
+    if (userId == null) throw Exception("User ID not found");
+    if (token == null) throw Exception("Token not found");
+
+    final url = Uri.parse('$baseUrl/users/$userId/bookings');
+    final response = await http.post(
+      url,
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(bookingData),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to book flight: ${response.body}");
+    }
+  }
+
+
+
+  // ===== Cancel Booking (تركته زي ما هو) =====
+  Future<void> cancelBooking(String email, int flightId) async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+
+    if (userId == null) throw Exception("User ID not found");
+
+    final res = await http.post(
+      Uri.parse("$baseUrl/users/$userId/cancel-booking"),
+      headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"},
+      body: jsonEncode({"flightId": flightId}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception("Failed to cancel booking");
+    }
+  }
+
+  // ===== Hotel Bookings =====
+  Future<List<HotelBooking>> getUserHotelBookings() async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+
+    if (userId == null) throw Exception("User ID not found");
+    if (token == null) throw Exception("Token not found");
+
+    final res = await http.get(
+      Uri.parse("$baseUrl/users/$userId/hotel-bookings"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    print("🔍 Status Code: ${res.statusCode}");
+    print("🔍 Response Body: ${res.body}");
+
+    if (res.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(res.body);
+      return data.map((json) => HotelBooking.fromJson(json)).toList();
+    } else {
+      throw Exception("Failed to load bookings: ${res.body}");
+    }
+  }
+
+  Future<void> addHotelBookingForUser({
+    required Map<String, dynamic> bookingData,
+  }) async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+
+    if (userId == null) throw Exception("User ID not found");
+
+    final url = Uri.parse("$baseUrl/users/$userId/hotel-bookings");
+    final response = await http.post(
+      url,
+    headers: {
+      "Authorization": "Bearer $token",
+    "Content-Type": "application/json",
+  },
+      body: jsonEncode(bookingData),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to save booking to server: ${response.body}");
+    }
+  }
+
+  Future<void> cancelHotelBooking({required String bookingId}) async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+    if (userId == null) throw Exception("User ID not found");
+
+    final res = await http.post(
+      Uri.parse("$baseUrl/users/$userId/cancel-hotel-booking"),
+      headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"},
+      body: jsonEncode({"bookingId": bookingId}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception("Failed to cancel booking");
+    }
+  }
   Future<WeatherResponse> getWeatherForecast(String city) async {
     final apiKey = 'fe929c8b878144e880e225611231508';
     final url = Uri.parse('https://api.weatherapi.com/v1/forecast.json?key=$apiKey&q=$city&days=3&aqi=no&alerts=no');
@@ -100,183 +365,6 @@ class ApiService {
       return WeatherResponse.fromJson(data);
     } else {
       throw Exception('Failed to load weather data');
-    }
-  }
-  // inside ApiService class
-
-  /// Book a hotel room
-  Future<void> bookHotel({
-    required int hotelId,
-    required String roomType,
-    required int quantity,
-  }) async {
-    final url = Uri.parse('$baseUrl/hotels/$hotelId/book');
-
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'roomType': roomType,
-        'quantity': quantity,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to book hotel: ${response.body}');
-    }
-  }
-
-  Future<void> createOrUpdateUserOnServer(String email) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
-
-      if (response.statusCode != 200) {
-        print("Error creating user on server: ${response.body}");
-      } else {
-        print("User created/exists on server");
-      }
-    } catch (e) {
-      print("Error connecting to server: $e");
-    }
-  }
-  Future<void> addHotelBookingForUser({
-    required String email,
-    required Map<String, dynamic> bookingData,
-  }) async {
-    final url = Uri.parse("$baseUrl/users/$email/hotel-bookings");
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(bookingData),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to save booking to server: ${response.body}");
-    }
-  }
-  Future<List<HotelBooking>> getUserHotelBookings(String email) async {
-    final res = await http.get(Uri.parse("$baseUrl/users/$email/hotel-bookings"));
-    if (res.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(res.body);
-      return data.map((json) => HotelBooking.fromJson(json)).toList();
-    } else {
-      throw Exception("Failed to load bookings");
-    }
-  }
-
-  Future<void> cancelHotelBooking({required String email, required String bookingId}) async {
-    final res = await http.post(
-      Uri.parse("$baseUrl/users/$email/cancel-hotel-booking"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"bookingId": bookingId}),
-    );
-    if (res.statusCode != 200) {
-      throw Exception("Failed to cancel booking");
-    }
-  }
-  Future<void> addFavorite({
-    required String email,
-    required String id,
-    required String type,
-  }) async {
-    final url = Uri.parse("$baseUrl/users/$email/favorites");
-
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "id": id,
-        "type": type,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to add favorite: ${response.body}");
-    }
-
-    print("✅ Favorite added: ${response.body}");
-  }
-
-  /// إزالة عنصر من المفضلة
-  Future<void> removeFavorite({
-    required String email,
-    required String id,
-    required String type,
-  }) async {
-    final url = Uri.parse("$baseUrl/users/$email/favorites");
-
-    final response = await http.delete(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "id": id,
-        "type": type,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to remove favorite: ${response.body}");
-    }
-
-    print("🗑 Favorite removed: ${response.body}");
-  }
-
-  Future<List<Favorite>> getUserFavorites(String email) async {
-    final res = await http.get(Uri.parse("$baseUrl/users/$email/favorites"));
-
-    if (res.statusCode == 200) {
-      final List data = jsonDecode(res.body);
-      return data.map((e) => Favorite.fromJson(e)).toList();
-    } else {
-      throw Exception("Failed to load favorites");
-    }
-  }
-  Future<List<dynamic>> getBookings(String email) async {
-    final res = await http.get(Uri.parse("$baseUrl/users/$email/bookings")); // ✅
-    if (res.statusCode == 200) {
-      return jsonDecode(res.body);
-    } else {
-      throw Exception("Failed to load bookings");
-    }
-  }
-
-  // 📌 إضافة حجز
-  Future<void> bookFlight(
-      String email,
-      {
-        required Map<String, dynamic> bookingData,
-      }) async {
-    final url = Uri.parse('$baseUrl/users/$email/bookings');
-
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(bookingData),
-    );
-
-    print("Booking response status: ${response.statusCode}");
-    print("Booking response body: ${response.body}");
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to book flight: ${response.body}");
-    }
-  }
-
-  // 📌 حذف حجز
-  Future<void> cancelBooking(String email, int flightId) async {
-    final res = await http.post(
-      Uri.parse("$baseUrl/users/$email/cancel-booking"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"flightId": flightId}),
-
-    );
-    if (res.statusCode != 200) {
-      throw Exception("Failed to cancel booking");
-
     }
   }
 }

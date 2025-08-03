@@ -42,10 +42,9 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final email = prefs.getString('email');
-      print("Email from prefs: $email");
+      final userId = prefs.getInt('userId');
 
-      if (email == null) {
+      if (userId == null) {
         setState(() {
           _hotelBookings = [];
           _isLoading = false;
@@ -53,7 +52,7 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
         return;
       }
 
-      final bookingsJson = await ApiService().getUserHotelBookings(email);
+      final bookingsJson = await ApiService().getUserHotelBookings();
       print("Bookings JSON from API: $bookingsJson");
       setState(() {
         _hotelBookings = List<HotelBooking>.from(bookingsJson);
@@ -79,7 +78,7 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
       if (email == null) return;
 
       await ApiService()
-          .cancelHotelBooking(email: email, bookingId: booking.bookingId);
+          .cancelHotelBooking( bookingId: booking.bookingId);
 
       setState(() {
         _hotelBookings.removeAt(index);

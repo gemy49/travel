@@ -25,9 +25,9 @@ class _MyFlightsScreenState extends State<MyFlightsScreen> {
     setState(() => _isLoading = true);
 
     final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('email') ?? '';
+    final userId = prefs.getInt('userId') ?? '';
 
-    if (email.isEmpty) {
+    if (userId.toString().isEmpty) {
       setState(() {
         _bookings = [];
         _isLoading = false;
@@ -36,7 +36,7 @@ class _MyFlightsScreenState extends State<MyFlightsScreen> {
     }
 
     try {
-      final data = await ApiService().getBookings(email);
+      final data = await ApiService().getBookings();
       setState(() {
         _bookings = data.map<Booking>((json) => Booking.fromJson(json)).toList();
       });
