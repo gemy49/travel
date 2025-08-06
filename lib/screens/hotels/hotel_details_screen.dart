@@ -182,7 +182,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     );
   }
 
-  void _openMap(BuildContext context, double latitude, double longitude) async {
+  void _openMap(BuildContext context, String latitude, String longitude) async {
     // Replace with actual coordinates if available in your model
     final Uri mapUrl = Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
@@ -428,7 +428,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                             ElevatedButton.icon(
                               onPressed: () {
                                 // Use actual coordinates if available
-                                _openMap(context, hotel.lat as double, hotel.lng as double);
+                                _openMap(context, hotel.lat ?? "", hotel.lng ?? "");
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryColor,

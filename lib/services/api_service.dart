@@ -11,24 +11,25 @@ import '../models/hotel.dart';
 import '../models/weather.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.130.213:3000/api';
+  final String baseUrl = 'http://192.168.190.213:3000/api';
 
   // ===== Helper to get stored userId =====
   Future<int?> _getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('userId');
   }
+
   Future<String?> _Authorization() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+
   Future<Map<String, dynamic>> registerUser({
     required String name,
     required String email,
     required String phone,
     required String password,
-  }) async
-  {
+  }) async {
     final url = Uri.parse('$baseUrl/register');
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({
@@ -42,10 +43,7 @@ class ApiService {
     final responseData = jsonDecode(response.body);
 
     if (response.statusCode == 201 || response.statusCode == 200) {
-      return {
-        'success': true,
-        'data': responseData,
-      };
+      return {'success': true, 'data': responseData};
     } else {
       return {
         'success': false,
@@ -53,26 +51,20 @@ class ApiService {
       };
     }
   }
+
   Future<Map<String, dynamic>> loginUser({
     required String email,
     required String password,
-  }) async
-  {
+  }) async {
     final url = Uri.parse('$baseUrl/login');
     final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode({
-      'email': email,
-      'password': password,
-    });
+    final body = jsonEncode({'email': email, 'password': password});
 
     final response = await http.post(url, headers: headers, body: body);
     final responseData = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      return {
-        'success': true,
-        'data': responseData,
-      };
+      return {'success': true, 'data': responseData};
     } else {
       return {
         'success': false,
@@ -86,8 +78,7 @@ class ApiService {
     String? from,
     String? to,
     String? date,
-  }) async
-  {
+  }) async {
     var url = Uri.parse('$baseUrl/flights');
     if (from != null || to != null || date != null) {
       url = Uri.parse('$baseUrl/flights?from=$from&to=$to&date=$date');
@@ -102,8 +93,7 @@ class ApiService {
   }
 
   // ===== Hotels =====
-  Future<List<Hotel>> getHotels({String? city}) async
-  {
+  Future<List<Hotel>> getHotels({String? city}) async {
     var url = Uri.parse('$baseUrl/hotels');
     if (city != null) {
       url = Uri.parse('$baseUrl/hotels?city=$city');
@@ -118,8 +108,7 @@ class ApiService {
   }
 
   // ===== Places =====
-  Future<List<Place>> getPlaces({String? city}) async
-  {
+  Future<List<Place>> getPlaces({String? city}) async {
     var url = Uri.parse('$baseUrl/places');
     if (city != null) {
       url = Uri.parse('$baseUrl/places?city=$city');
@@ -133,8 +122,7 @@ class ApiService {
     }
   }
 
-  Future<List<City>> getCities() async
-  {
+  Future<List<City>> getCities() async {
     final response = await http.get(Uri.parse('$baseUrl/places'));
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
@@ -156,8 +144,7 @@ class ApiService {
     required arrivalTime,
     required date,
     required price,
-  }) async
-  {
+  }) async {
     final userId = await _getUserId();
     final token = await _Authorization();
     if (userId == null) throw Exception("User ID not found");
@@ -207,10 +194,7 @@ class ApiService {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       },
-      body: jsonEncode({
-        "favoriteId": favoriteId,
-        "type": type,
-      }),
+      body: jsonEncode({"favoriteId": favoriteId, "type": type}),
     );
 
     if (response.statusCode != 200) {
@@ -223,9 +207,10 @@ class ApiService {
     final token = await _Authorization();
     if (userId == null) throw Exception("User ID not found");
 
-    final res = await http.get(Uri.parse("$baseUrl/users/$userId/favorites"),
-    headers: {
-      "Content-Type": "application/json",
+    final res = await http.get(
+      Uri.parse("$baseUrl/users/$userId/favorites"),
+      headers: {
+        "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       },
     );
@@ -261,11 +246,7 @@ class ApiService {
     }
   }
 
-
-  Future<void> bookFlight({
-    required Map<String, dynamic> bookingData,
-  }) async
-  {
+  Future<void> bookFlight({required Map<String, dynamic> bookingData}) async {
     final userId = await _getUserId();
     final token = await _Authorization();
 
@@ -287,8 +268,6 @@ class ApiService {
     }
   }
 
-
-
   // ===== Cancel Booking (تركته زي ما هو) =====
   Future<void> cancelBooking(String email, int flightId) async {
     final userId = await _getUserId();
@@ -298,7 +277,10 @@ class ApiService {
 
     final res = await http.post(
       Uri.parse("$baseUrl/users/$userId/cancel-booking"),
-      headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"},
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
       body: jsonEncode({"flightId": flightId}),
     );
     if (res.statusCode != 200) {
@@ -335,8 +317,7 @@ class ApiService {
 
   Future<void> addHotelBookingForUser({
     required Map<String, dynamic> bookingData,
-  }) async
-  {
+  }) async {
     final userId = await _getUserId();
     final token = await _Authorization();
 
@@ -345,13 +326,12 @@ class ApiService {
     final url = Uri.parse("$baseUrl/users/$userId/hotel-bookings");
     final response = await http.post(
       url,
-    headers: {
-      "Authorization": "Bearer $token",
-    "Content-Type": "application/json",
-  },
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
 
       body: jsonEncode(bookingData),
-
     );
     print("🔍 Status Code: ${response.statusCode}");
     print("🔍 Response Body: ${response.body}");
@@ -360,32 +340,29 @@ class ApiService {
     }
   }
 
-Future<void>bookRoom(
-    { required int id,
-      required int quantity,
-      required String roomType
-    }
-    )async
-{
-    final token =await _Authorization();
+  Future<void> bookRoom({
+    required int id,
+    required int quantity,
+    required String roomType,
+  }) async {
+    final token = await _Authorization();
     if (token == null) throw Exception("Token not found");
     final url = Uri.parse("$baseUrl/hotels/$id/book");
     final response = await http.post(
-        url,
+      url,
       headers: {
-          "Authorization": "Bearer $token",
+        "Authorization": "Bearer $token",
         "Content-Type": "application/json",
       },
-      body: jsonEncode({
-        "quantity": quantity,
-        "roomType": roomType,
-      }
-      ),
+      body: jsonEncode({"quantity": quantity, "roomType": roomType}),
     );
     if (response.statusCode != 200) {
-      throw Exception("Failed to save booking room  to server: ${response.body}");
+      throw Exception(
+        "Failed to save booking room  to server: ${response.body}",
+      );
     }
-}
+  }
+
   Future<void> cancelHotelBooking({required String bookingId}) async {
     final userId = await _getUserId();
     final token = await _Authorization();
@@ -393,16 +370,22 @@ Future<void>bookRoom(
 
     final res = await http.post(
       Uri.parse("$baseUrl/users/$userId/cancel-hotel-booking"),
-      headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"},
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
       body: jsonEncode({"bookingId": bookingId}),
     );
     if (res.statusCode != 200) {
       throw Exception("Failed to cancel booking");
     }
   }
+
   Future<WeatherResponse> getWeatherForecast(String city) async {
     final apiKey = 'fe929c8b878144e880e225611231508';
-    final url = Uri.parse('https://api.weatherapi.com/v1/forecast.json?key=$apiKey&q=$city&days=3&aqi=no&alerts=no');
+    final url = Uri.parse(
+      'https://api.weatherapi.com/v1/forecast.json?key=$apiKey&q=$city&days=3&aqi=no&alerts=no',
+    );
 
     final response = await http.get(url);
     if (response.statusCode == 200) {
