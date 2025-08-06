@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:FlyHigh/models/hotel.dart';
 import '../../models/MyHotels.dart';
+import '../../providers/hotel_provider.dart';
 import '../../services/api_service.dart';
 
 class MyHotelsScreen extends StatefulWidget {
@@ -92,6 +94,10 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
         SnackBar(content: Text("❌ Failed to delete booking: $e")),
       );
     }
+    finally {
+      final hotelProvider = Provider.of<HotelProvider>(context, listen: false);
+      await hotelProvider.fetchHotels();
+    }
   }
 
   @override
@@ -135,6 +141,8 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
               amenities: [],
               contact: {},
               availableRooms: [],
+              lat: '',
+              lng: '',
             );
 
             return _buildHotelBookingCard(
@@ -249,6 +257,7 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
             Divider(color: Colors.grey[300], thickness: 0.8),
             const SizedBox(height: 16),

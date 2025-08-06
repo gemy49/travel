@@ -3,9 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:FlyHigh/models/hotel_booking_data.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/hotel.dart';
+import '../../providers/hotel_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/storage_keys.dart'; // Adjust path if needed
 
@@ -39,6 +41,10 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
   late final Hotel hotel;
   late final List<Map<String, dynamic>> selectedRooms;
   late final double totalPrice;
+  late final DateTime CheckInDate;
+  late final DateTime CheckOutDate;
+
+
   bool _isBookingInProgress = false;
   @override
   void initState() {
@@ -47,9 +53,9 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
     hotel = widget.bookingData.hotel;
     selectedRooms = widget.bookingData.selectedRooms;
     totalPrice = widget.bookingData.totalPrice;
-    // checkInDate = widget.bookingData.checkInDate; // If used
-    // checkOutDate = widget.bookingData.checkOutDate; // If used
-  }
+    CheckInDate = widget.bookingData.checkInDate ;
+    CheckOutDate = widget.bookingData.checkOutDate ;
+ }
 // Modify the function signature to accept an optional debugId
   Future<void> _saveHotelBookingToLocalStorage({String? debugId}) async {
     print("Hotel Payment Save Function: Called with debug ID: $debugId");
@@ -310,31 +316,17 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                       });
 
                       try {
-                        // 1️⃣ احجز الغرف على السيرفر
                         for (var room in selectedRooms) {
-                          await ApiService().addHotelBookingForUser(
-                            bookingData: {
-                              "bookingId": DateTime.now().millisecondsSinceEpoch.toString(), // ID فريد للحجز
-                              "hotelId": hotel.id,
-                              "hotelName": hotel.name,
-                              "city": hotel.city,
-                              "rooms": [
-                                {
-                                  "type": room['type'],
-                                  "count": room['quantity'],
-                                }
-                              ],
-                              "totalCost": totalPrice, // أو أي حساب مناسب
-                              "bookingDate": DateTime.now().toIso8601String(),
-                            },
+                          await ApiService().bookRoom(
+                              id: hotel.id,
+                            roomType: room['type'],
+                            quantity: room['quantity'],
                           );
                         }
-
-
-                        // 2️⃣ أرسل بيانات الحجز إلى المستخدم في الـ backend
+                        // 1️⃣ احجز الغرف على السيرفر
                         await ApiService().addHotelBookingForUser(
                           bookingData: {
-                            "bookingId": debugId,
+                            "bookingId": DateTime.now().millisecondsSinceEpoch.toString(),
                             "hotelId": hotel.id,
                             "hotelName": hotel.name,
                             "city": hotel.city,
@@ -347,7 +339,9 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                             "totalCost": totalPrice,
                             "fullName": _nameController.text.trim(),
                             "phone": _phoneController.text.trim(),
-                            "bookingDate": DateTime.now().toIso8601String()
+                            "bookingDate": DateTime.now().toIso8601String(),
+                            "checkIn":CheckInDate.toString(),
+                            "checkOut":CheckOutDate.toString(),
                           },
                         );
 
@@ -371,6 +365,9 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                           ),
                         );
                       } finally {
+                        final hotelProvider = Provider.of<HotelProvider>(context, listen: false);
+                        await hotelProvider.fetchHotels();
+
                         setState(() {
                           _isBookingInProgress = false;
                         });

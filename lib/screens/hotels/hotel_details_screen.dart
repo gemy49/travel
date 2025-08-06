@@ -29,13 +29,21 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   Hotel? _hotel;
   bool _isLoading = true;
   String _errorMessage = '';
-
+  DateTime? _checkInDate;
+  DateTime? _checkOutDate;
+  late TextEditingController _checkInDateController;
+  late TextEditingController _checkOutDateController;
   // State for room selection (as before)
   Map<String, int> _selectedRoomQuantities = {};
 
   @override
   void initState() {
     super.initState();
+    _selectedRoomQuantities = <String, int>{};
+
+    // Initialize date controllers
+    _checkInDateController = TextEditingController();
+    _checkOutDateController = TextEditingController();
     if (widget.hotel != null) {
       // If hotel object is provided directly, use it
       _hotel = widget.hotel;
@@ -136,7 +144,15 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
 
   void _handleBooking(BuildContext context) {
     if (_hotel == null) return;
-
+    if (_checkInDate == null || _checkOutDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select both check-in and check-out dates."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     final double totalPrice = _calculateTotalPrice();
     final List<Map<String, dynamic>> selectedRoomsData = _getSelectedRoomsData();
 
@@ -154,6 +170,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       hotel: _hotel!, // Use the fetched hotel
       selectedRooms: selectedRoomsData,
       totalPrice: totalPrice,
+      checkInDate: _checkInDate!,
+      checkOutDate: _checkOutDate!,
     );
 
     Navigator.push(
@@ -198,7 +216,68 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       }
     }
   }
+  // Inside the _HotelDetailsScreenState class
 
+// Function to select check-in date
+  Future<void> _selectCheckInDate(BuildContext context) async {
+    final DateTime today = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _checkInDate ?? today, // Default to today or previously selected
+      firstDate: today, // Cannot select a past date
+      lastDate: DateTime(today.year + 1), // Allow selection up to a year in the future
+    );
+    if (picked != null && picked != _checkInDate) {
+      setState(() {
+        _checkInDate = picked;
+        // Format and display the selected date
+        _checkInDateController.text = "${picked.day}/${picked.month}/${picked.year}";
+
+        // If check-out date is before the new check-in date, reset check-out
+        if (_checkOutDate != null && _checkOutDate!.isBefore(_checkInDate!)) {
+          _checkOutDate = null;
+          _checkOutDateController.clear();
+        }
+      });
+    }
+  }
+
+// Function to select check-out date
+  Future<void> _selectCheckOutDate(BuildContext context) async {
+    // Ensure check-in date is selected first
+    if (_checkInDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select a check-in date first."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _checkOutDate ?? _checkInDate!.add(const Duration(days: 1)), // Default to day after check-in
+      firstDate: _checkInDate!.add(const Duration(days: 1)), // Must be after check-in
+      lastDate: _checkInDate!.add(const Duration(days: 365)), // Allow up to a year stay
+    );
+    if (picked != null && picked != _checkOutDate) {
+      setState(() {
+        _checkOutDate = picked;
+        // Format and display the selected date
+        _checkOutDateController.text = "${picked.day}/${picked.month}/${picked.year}";
+      });
+    }
+  }
+  void dispose() {
+    // Dispose of room selection related resources if any (as before)
+
+    // Dispose of date controllers
+    _checkInDateController.dispose();
+    _checkOutDateController.dispose();
+
+    super.dispose();
+  }
   // --- UI Building (mostly as before, but using _hotel) ---
   @override
   Widget build(BuildContext context) {
@@ -349,7 +428,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                             ElevatedButton.icon(
                               onPressed: () {
                                 // Use actual coordinates if available
-                                _openMap(context, 25.1415548, 55.1862657);
+                                _openMap(context, hotel.lat as double, hotel.lng as double);
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryColor,
@@ -383,6 +462,70 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                   }).toList(),
                   const SizedBox(height: 10),
                   // Display Total Price
+                  Text(
+                    "Select Dates:",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor, // Use the primary color defined earlier
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _checkInDateController,
+                          readOnly: true, // Make it read-only to force using the picker
+                          decoration: InputDecoration(
+                            labelText: "Check-in Date",
+                            prefixIcon: const Icon(Icons.calendar_today),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: primaryColor, width: 2.0),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: primaryColor, width: 2.0),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                          onTap: () => _selectCheckInDate(context), // Open date picker on tap
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: TextField(
+                          controller: _checkOutDateController,
+                          readOnly: true, // Make it read-only to force using the picker
+                          decoration: InputDecoration(
+                            labelText: "Check-out Date",
+                            prefixIcon: const Icon(Icons.calendar_today_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: primaryColor, width: 2.0),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: primaryColor, width: 2.0),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                          onTap: () => _selectCheckOutDate(context), // Open date picker on tap
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(

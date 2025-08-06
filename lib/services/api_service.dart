@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart' as shared_preferences;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,7 +11,7 @@ import '../models/hotel.dart';
 import '../models/weather.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.219.213:3000/api';
+  final String baseUrl = 'http://192.168.130.213:3000/api';
 
   // ===== Helper to get stored userId =====
   Future<int?> _getUserId() async {
@@ -26,7 +27,8 @@ class ApiService {
     required String email,
     required String phone,
     required String password,
-  }) async {
+  }) async
+  {
     final url = Uri.parse('$baseUrl/register');
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({
@@ -54,7 +56,8 @@ class ApiService {
   Future<Map<String, dynamic>> loginUser({
     required String email,
     required String password,
-  }) async {
+  }) async
+  {
     final url = Uri.parse('$baseUrl/login');
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({
@@ -83,7 +86,8 @@ class ApiService {
     String? from,
     String? to,
     String? date,
-  }) async {
+  }) async
+  {
     var url = Uri.parse('$baseUrl/flights');
     if (from != null || to != null || date != null) {
       url = Uri.parse('$baseUrl/flights?from=$from&to=$to&date=$date');
@@ -98,7 +102,8 @@ class ApiService {
   }
 
   // ===== Hotels =====
-  Future<List<Hotel>> getHotels({String? city}) async {
+  Future<List<Hotel>> getHotels({String? city}) async
+  {
     var url = Uri.parse('$baseUrl/hotels');
     if (city != null) {
       url = Uri.parse('$baseUrl/hotels?city=$city');
@@ -113,7 +118,8 @@ class ApiService {
   }
 
   // ===== Places =====
-  Future<List<Place>> getPlaces({String? city}) async {
+  Future<List<Place>> getPlaces({String? city}) async
+  {
     var url = Uri.parse('$baseUrl/places');
     if (city != null) {
       url = Uri.parse('$baseUrl/places?city=$city');
@@ -127,7 +133,8 @@ class ApiService {
     }
   }
 
-  Future<List<City>> getCities() async {
+  Future<List<City>> getCities() async
+  {
     final response = await http.get(Uri.parse('$baseUrl/places'));
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
@@ -139,7 +146,7 @@ class ApiService {
 
   // ===== Favorites =====
   Future<void> addFavorite({
-    required String favoriteId,
+    required int favoriteId,
     required String type,
     required airline,
     required flightNumber,
@@ -149,7 +156,8 @@ class ApiService {
     required arrivalTime,
     required date,
     required price,
-  }) async {
+  }) async
+  {
     final userId = await _getUserId();
     final token = await _Authorization();
     if (userId == null) throw Exception("User ID not found");
@@ -182,9 +190,10 @@ class ApiService {
   }
 
   Future<void> removeFavorite({
-    required String favoriteId,
+    required int favoriteId,
     required String type,
-  }) async {
+  }) async
+  {
     final userId = await _getUserId();
     final token = await _Authorization();
 
@@ -211,10 +220,15 @@ class ApiService {
 
   Future<List<Favorite>> getUserFavorites() async {
     final userId = await _getUserId();
-
+    final token = await _Authorization();
     if (userId == null) throw Exception("User ID not found");
 
-    final res = await http.get(Uri.parse("$baseUrl/users/$userId/favorites"));
+    final res = await http.get(Uri.parse("$baseUrl/users/$userId/favorites"),
+    headers: {
+      "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
 
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
@@ -250,7 +264,8 @@ class ApiService {
 
   Future<void> bookFlight({
     required Map<String, dynamic> bookingData,
-  }) async {
+  }) async
+  {
     final userId = await _getUserId();
     final token = await _Authorization();
 
@@ -320,7 +335,8 @@ class ApiService {
 
   Future<void> addHotelBookingForUser({
     required Map<String, dynamic> bookingData,
-  }) async {
+  }) async
+  {
     final userId = await _getUserId();
     final token = await _Authorization();
 
@@ -333,14 +349,43 @@ class ApiService {
       "Authorization": "Bearer $token",
     "Content-Type": "application/json",
   },
-      body: jsonEncode(bookingData),
-    );
 
+      body: jsonEncode(bookingData),
+
+    );
+    print("🔍 Status Code: ${response.statusCode}");
+    print("🔍 Response Body: ${response.body}");
     if (response.statusCode != 200) {
       throw Exception("Failed to save booking to server: ${response.body}");
     }
   }
 
+Future<void>bookRoom(
+    { required int id,
+      required int quantity,
+      required String roomType
+    }
+    )async
+{
+    final token =await _Authorization();
+    if (token == null) throw Exception("Token not found");
+    final url = Uri.parse("$baseUrl/hotels/$id/book");
+    final response = await http.post(
+        url,
+      headers: {
+          "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({
+        "quantity": quantity,
+        "roomType": roomType,
+      }
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Failed to save booking room  to server: ${response.body}");
+    }
+}
   Future<void> cancelHotelBooking({required String bookingId}) async {
     final userId = await _getUserId();
     final token = await _Authorization();

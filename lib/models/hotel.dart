@@ -30,6 +30,8 @@ class Hotel {
   final String description;
   final List<dynamic> amenities;
   final Map<String, dynamic> contact;
+  final String? lat;
+  final String ?lng;
 
 
 
@@ -45,6 +47,8 @@ class Hotel {
     required this.description,
     required this.amenities,
     required this.contact,
+    required this.lat,
+    required this.lng,
   });
 
   factory Hotel.fromJson(Map<String, dynamic> json) {
@@ -63,6 +67,8 @@ class Hotel {
       description: json['description'],
       amenities: json['amenities'] as List<dynamic>,
       contact: json['contact'] as Map<String, dynamic>,
+      lat: json['lat'],
+      lng: json['lng'],
     );
   }
 
@@ -79,6 +85,8 @@ class Hotel {
       'description': description,
       'amenities': amenities,
       'contact': contact,
+      'lat': lat,
+      'lng': lng,
     };
   }
 }
