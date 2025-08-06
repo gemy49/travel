@@ -21,8 +21,8 @@ class _FavoriteFlightsScreenState extends State<FavoriteFlightsScreen> {
   }
 
   Future<void> _loadData() async {
-    await context.read<CounterBloc>().fetchFavoritesFromServer();
     await Provider.of<FlightProvider>(context, listen: false).fetchFlights();
+    await context.read<CounterBloc>().fetchFavoritesFromServer();
   }
 
   @override
@@ -45,28 +45,29 @@ class _FavoriteFlightsScreenState extends State<FavoriteFlightsScreen> {
             ),
             child: flights.isEmpty
                 ? const Center(
-              child: Text(
-                "No favorite flights found.",
-                style: TextStyle(color: Colors.black),
-              ),
-            )
+                    child: Text(
+                      "No favorite flights found.",
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  )
                 : ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(), // مهم عشان يشتغل حتى لو القائمة صغيرة
-              itemCount: flights.length,
-              itemBuilder: (context, index) {
-                final flight = flights[index];
-                return InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/flight-details',
-                      arguments: flight,
-                    );
-                  },
-                  child: FlightCard(flight: flight),
-                );
-              },
-            ),
+                    physics:
+                        const AlwaysScrollableScrollPhysics(), // مهم عشان يشتغل حتى لو القائمة صغيرة
+                    itemCount: flights.length,
+                    itemBuilder: (context, index) {
+                      final flight = flights[index];
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/flight-details',
+                            arguments: flight,
+                          );
+                        },
+                        child: FlightCard(flight: flight),
+                      );
+                    },
+                  ),
           ),
         );
       },
