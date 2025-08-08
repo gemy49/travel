@@ -11,7 +11,7 @@ import '../models/hotel.dart';
 import '../models/weather.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.190.213:3000/api';
+  final String baseUrl = 'http://192.168.100.10:3000/api';
 
   // ===== Helper to get stored userId =====
   Future<int?> _getUserId() async {
@@ -179,8 +179,7 @@ class ApiService {
   Future<void> removeFavorite({
     required int favoriteId,
     required String type,
-  }) async
-  {
+  }) async {
     final userId = await _getUserId();
     final token = await _Authorization();
 

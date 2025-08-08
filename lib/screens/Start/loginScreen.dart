@@ -39,17 +39,16 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setString('email', userData['user']['email']);
         await prefs.setString('name', userData['user']['name']);
         await prefs.setString('phone', userData['user']['phone']);
-        await prefs.setInt('userId', userData['user']['id']); // ✅ حفظ الـ userId
+        await prefs.setInt('userId', userData['user']['id']);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Welcome ${userData['user']['name']}!")),
         );
-        print('the id is ///////////////////////////${prefs.getInt("userId")}');
         Navigator.pushReplacementNamed(context, '/BottomNavigationBar');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['error'])),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result['error'])));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -59,7 +58,6 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => isLoading = false);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -164,6 +162,21 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
+
+                        // 🔽 زر نسيت كلمة المرور
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/forgot-password');
+                            },
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(color: Colors.amber),
+                            ),
+                          ),
+                        ),
+
                         SizedBox(height: constraints.maxHeight * 0.02),
 
                         SizedBox(
@@ -179,19 +192,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: isLoading
                                 ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
                                 : Text(
-                              'Login',
-                              style: TextStyle(
-                                fontSize: constraints.maxHeight * 0.025,
-                              ),
-                            ),
+                                    'Login',
+                                    style: TextStyle(
+                                      fontSize: constraints.maxHeight * 0.025,
+                                    ),
+                                  ),
                           ),
                         ),
                         Row(

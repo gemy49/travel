@@ -4,12 +4,13 @@ import 'package:FlyHigh/models/hotel.dart';
 class HotelCard extends StatelessWidget {
   final Hotel hotel;
 
-  const HotelCard({Key? key, required this.hotel})
-    : super(key: key);
+  const HotelCard({Key? key, required this.hotel}) : super(key: key);
   String _formatPriceRange(dynamic priceData) {
     if (priceData is List && priceData.isNotEmpty) {
       try {
-        List<double> prices = priceData.map((p) => (p as num).toDouble()).toList();
+        List<double> prices = priceData
+            .map((p) => (p as num).toDouble())
+            .toList();
         double minPrice = prices.reduce((a, b) => a < b ? a : b);
         double maxPrice = prices.reduce((a, b) => a > b ? a : b);
         String minPriceFormatted = minPrice.toStringAsFixed(2);
@@ -40,19 +41,19 @@ class HotelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<int> price = hotel.availableRooms.map((room) => room.price).toList();
+    final List<int> price = hotel.availableRooms
+        .map((room) => room.price)
+        .toList();
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       elevation: 5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-         color: Colors.white,
+          color: Colors.white,
         ),
         child: Row(
           children: [
@@ -64,7 +65,9 @@ class HotelCard extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 image: DecorationImage(
-                  image: AssetImage('assets/Hotels/${hotel.image}'), // تأكد من توفر الصورة
+                  image: AssetImage(
+                    'assets/Hotels/${hotel.image}',
+                  ), // تأكد من توفر الصورة
                   fit: BoxFit.cover,
                 ),
               ),
@@ -85,9 +88,7 @@ class HotelCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     'City: ${hotel.city}',
-                    style: TextStyle(
-                      color: Colors.grey.shade800,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade800),
                   ),
                   Text(
                     'Price: (${_formatPriceRange(price)})',
