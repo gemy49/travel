@@ -144,6 +144,12 @@ class ApiService {
     required arrivalTime,
     required date,
     required price,
+    required name,
+    required city,
+    required image,
+    required description,
+    required rate,
+    required location,
   }) async {
     final userId = await _getUserId();
     final token = await _Authorization();
@@ -168,6 +174,12 @@ class ApiService {
         "arrivalTime": arrivalTime,
         "date": date,
         "price": price,
+        "name": name,
+        "city": city,
+        "image": image,
+        "description": description,
+        "rate": rate,
+        "location": location,
       }),
     );
 

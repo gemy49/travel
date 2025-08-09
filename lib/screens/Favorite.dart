@@ -40,6 +40,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           backgroundColor: Colors.white,
           title: const TabBar(
             tabs: [

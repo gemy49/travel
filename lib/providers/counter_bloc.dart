@@ -107,6 +107,12 @@ class CounterBloc extends Cubit<PageState> {
           departureTime: flight?.departureTime,
           arrivalTime: flight?.arrivalTime,
           date: flight?.date,
+          name: hotel?.name,
+          city: hotel?.city,
+          image: hotel?.image,
+          description: hotel?.description,
+          location: hotel?.location,
+          rate: hotel?.rate,
         );
         currentFavorites.add(Favorite(id: itemId, type: type));
       }

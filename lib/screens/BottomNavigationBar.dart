@@ -99,6 +99,7 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
           return Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
+              automaticallyImplyLeading: false,
               backgroundColor: Colors.white,
               title: Row(
                 children: [

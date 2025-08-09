@@ -90,19 +90,40 @@ class _FlightsScreenState extends State<FlightsScreen> {
     });
   }
 
-  bool _isDateInRange(String flightDate) {
+  // Inside the _FlightsScreenState class
+
+  /// Checks if a flight's date matches the selected filter date exactly.
+  bool _isDateExactlyMatching(String flightDate) {
+    // If no date is selected, show all flights (no filter applied)
     if (_startDate == null) return true;
+
     try {
+      // Parse the flight's date string (assuming format YYYY-MM-DD)
       List<String> dateParts = flightDate.split('-');
       DateTime flightDateTime = DateTime(
-        int.parse(dateParts[0]),
-        int.parse(dateParts[1]),
-        int.parse(dateParts[2]),
+        int.parse(dateParts[0]), // Year
+        int.parse(dateParts[1]), // Month
+        int.parse(dateParts[2]), // Day
       );
-      DateTime flightDateOnly =
-      DateTime(flightDateTime.year, flightDateTime.month, flightDateTime.day);
-      return flightDateOnly.isAfter(_startDate!.subtract(const Duration(days: 1)));
+      // Create a DateTime object for the flight date only (ignore time)
+      DateTime flightDateOnly = DateTime(
+        flightDateTime.year,
+        flightDateTime.month,
+        flightDateTime.day,
+      );
+
+      // Create a DateTime object for the selected filter date only
+      DateTime filterDateOnly = DateTime(
+        _startDate!.year,
+        _startDate!.month,
+        _startDate!.day,
+      );
+
+      // Check if the flight date is exactly the same as the selected date
+      return flightDateOnly.isAtSameMomentAs(filterDateOnly);
     } catch (e) {
+      // If parsing fails, show the flight (graceful degradation)
+      print("Date parsing error for flight date '$flightDate': $e");
       return true;
     }
   }
@@ -116,14 +137,13 @@ class _FlightsScreenState extends State<FlightsScreen> {
   @override
   Widget build(BuildContext context) {
     final flightProvider = Provider.of<FlightProvider>(context);
-
     final filteredFlights = flightProvider.flights.where((flight) {
       bool matchesFrom =
       flight.from.toLowerCase().contains(_fromQuery.toLowerCase());
       bool matchesTo =
       flight.to.toLowerCase().contains(_toQuery.toLowerCase());
-      bool matchesDateRange = _isDateInRange(flight.date);
-      return matchesFrom && matchesTo && matchesDateRange;
+      bool matchesExactDate = _isDateExactlyMatching(flight.date);
+      return matchesFrom && matchesTo && matchesExactDate;
     }).toList();
 
     final visibleFlights = filteredFlights.take(_itemsToShow).toList();
