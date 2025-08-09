@@ -1,5 +1,8 @@
+import 'package:FlyHigh/providers/counter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:FlyHigh/models/hotel.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../providers/counter_state.dart';
 
 class HotelCard extends StatelessWidget {
   final Hotel hotel;
@@ -59,8 +62,8 @@ class HotelCard extends StatelessWidget {
           children: [
             // Placeholder for an image (optional)
             Container(
-              height: 60,
-              width: 60,
+              height: 70,
+              width: 70,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -100,7 +103,26 @@ class HotelCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            BlocBuilder<CounterBloc, PageState>(
+              builder: (context, state) {
+                final bool isFavorite = state.favorites.any(
+                      (fav) => fav.id == hotel.id && fav.type == "hotel",
+                );
+                return IconButton(
+                  onPressed: () {
+                    context.read<CounterBloc>().toggleFavorite(itemId: hotel.id, type: "hotel", hotel: hotel);
+                  },
+                  icon: Icon(
+                    isFavorite
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    color: isFavorite
+                        ? Colors.blue
+                        : Colors.grey.shade400,
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),

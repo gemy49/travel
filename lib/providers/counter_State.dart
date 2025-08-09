@@ -1,40 +1,25 @@
-// counter_state.dart
+import '../models/favorite.dart';
+
 class PageState {
   final int pageIndex;
   final int id;
-  final List<int> favoriteIds;
+  final List<Favorite> favorites;
 
   PageState({
     required this.pageIndex,
     required this.id,
-    required this.favoriteIds,
+    required this.favorites,
   });
 
   PageState copyWith({
     int? pageIndex,
     int? id,
-    List<int>? favoriteIds,
+    List<Favorite>? favorites,
   }) {
     return PageState(
       pageIndex: pageIndex ?? this.pageIndex,
       id: id ?? this.id,
-      favoriteIds: favoriteIds ?? List.from(this.favoriteIds),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'pageIndex': pageIndex,
-      'id': id,
-      'favoriteIds': favoriteIds,
-    };
-  }
-
-  factory PageState.fromJson(Map<String, dynamic> json) {
-    return PageState(
-      pageIndex: json['pageIndex'] as int? ?? 0,
-      id: json['id'] as int? ?? 0,
-      favoriteIds: List<int>.from(json['favoriteIds'] ?? []),
+      favorites: favorites ?? this.favorites,
     );
   }
 }

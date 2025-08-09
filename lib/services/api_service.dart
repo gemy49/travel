@@ -11,7 +11,7 @@ import '../models/hotel.dart';
 import '../models/weather.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.100.10:3000/api';
+  final String baseUrl = 'http://192.168.1.100:3000/api';
 
   // ===== Helper to get stored userId =====
   Future<int?> _getUserId() async {
@@ -316,7 +316,8 @@ class ApiService {
 
   Future<void> addHotelBookingForUser({
     required Map<String, dynamic> bookingData,
-  }) async {
+  }) async
+  {
     final userId = await _getUserId();
     final token = await _Authorization();
 
@@ -343,7 +344,8 @@ class ApiService {
     required int id,
     required int quantity,
     required String roomType,
-  }) async {
+  }) async
+  {
     final token = await _Authorization();
     if (token == null) throw Exception("Token not found");
     final url = Uri.parse("$baseUrl/hotels/$id/book");
@@ -394,4 +396,87 @@ class ApiService {
       throw Exception('Failed to load weather data');
     }
   }
+   Future<Map<String, dynamic>> sendResetEmail(String email) async
+   {
+    final url = Uri.parse('$baseUrl/forgot-password');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'email': email}),
+    );
+
+    final data = json.decode(response.body);
+
+    return {
+      'statusCode': response.statusCode,
+      'data': data,
+    };
+  }
+  Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String token,
+    required String newPassword,
+  }) async
+  {
+    final url = Uri.parse('$baseUrl/reset-password');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'email': email,
+        'token': token,
+        'newPassword': newPassword,
+      }),
+    );
+
+    final data = json.decode(response.body);
+
+    return {
+      'statusCode': response.statusCode,
+      'data': data,
+    };
+  }
+  Future<bool> updateProfilePhoto({
+    required String profilePhotoUrl,
+  }) async
+  {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+
+    final response = await http.put(
+      Uri.parse("$baseUrl/users/$userId/profile"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: json.encode({"profilePhoto": profilePhotoUrl}),
+    );
+
+    print("🔹 Status Code: ${response.statusCode}");
+    print("🔹 Response Body: ${response.body}");
+
+    return response.statusCode == 200;
+  }
+
+  Future<String?> getProfilePhoto() async {
+    final userId = await _getUserId();
+    final token = await _Authorization();
+
+    final response = await http.get(
+      Uri.parse("$baseUrl/users/$userId/profile"),
+      headers: {
+        "Authorization": "Bearer $token",
+      },
+    );
+    print("🔹 Status Code: ${response.statusCode}");
+    print("🔹 Response Body: ${response.body}");
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data["profilePhoto"] as String?;
+    }
+    return null;
+  }
+
 }

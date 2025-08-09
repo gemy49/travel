@@ -65,10 +65,12 @@ class FlightCard extends StatelessWidget {
             ),
             BlocBuilder<CounterBloc, PageState>(
               builder: (context, state) {
-                final bool isFavorite = state.favoriteIds.contains(flight.id);
+                final bool isFavorite = state.favorites.any(
+                      (fav) => fav.id == flight.id && fav.type == "flight",);
+
                 return IconButton(
                   onPressed: () {
-                    context.read<CounterBloc>().toggleFavorite(flight.id,flight);
+                    context.read<CounterBloc>().toggleFavorite(itemId: flight.id, type: "flight",flight: flight);
                   },
                   icon: Icon(
                     isFavorite

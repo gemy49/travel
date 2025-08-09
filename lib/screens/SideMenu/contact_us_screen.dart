@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../BottomNavigationBar.dart';
+
 const Color primaryColor = Color(0xFF77BEF0);
 
 class ContactUsScreen extends StatefulWidget {
@@ -28,6 +30,11 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       _emailController.clear();
       _messageController.clear();
     }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const Bottomnavigationbar()),
+          (Route<dynamic> route) => false,
+    );
   }
 
   @override

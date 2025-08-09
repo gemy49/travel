@@ -10,8 +10,8 @@ import 'package:FlyHigh/models/hotel.dart';
 import '../models/Flights_booking_data.dart'; // Adjust path if needed
 
 // 👇 استيراد شاشات إعادة تعيين كلمة المرور
-import 'package:FlyHigh/screens/auth/forgot_password_screen.dart';
-import 'package:FlyHigh/screens/auth/reset_password_screen.dart';
+import 'package:FlyHigh/screens/Start/forgot_password_screen.dart';
+import 'package:FlyHigh/screens/Start/reset_password_screen.dart';
 import 'package:FlyHigh/screens/Start/loginScreen.dart';
 
 class RouteGenerator {

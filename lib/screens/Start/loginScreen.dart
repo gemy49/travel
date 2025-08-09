@@ -35,11 +35,11 @@ class _LoginScreenState extends State<LoginScreen> {
         final userData = result['data'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('IsLoggedIn', true);
-        await prefs.setString('token', userData['token']);
-        await prefs.setString('email', userData['user']['email']);
-        await prefs.setString('name', userData['user']['name']);
-        await prefs.setString('phone', userData['user']['phone']);
-        await prefs.setInt('userId', userData['user']['id']);
+        await prefs.setString("token", userData['token']);
+        await prefs.setInt("userId", userData['user']['id']);
+        await prefs.setString("email", userData['user']['email']);
+        await prefs.setString("name", userData['user']['name']);
+        await prefs.setString("phone", userData['user']['phone']);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Welcome ${userData['user']['name']}!")),
