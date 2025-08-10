@@ -21,7 +21,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("✅ Message sent successfully!"),
+          content: Text("✅ Message sent successfully"),
           backgroundColor: Colors.green,
         ),
       );
@@ -33,7 +33,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const Bottomnavigationbar()),
-          (Route<dynamic> route) => false,
+      (Route<dynamic> route) => false,
     );
   }
 

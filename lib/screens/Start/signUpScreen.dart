@@ -23,6 +23,60 @@ class _SignUpPageState extends State<SignUp> {
   bool confirmPass = true;
   bool isLoading = false;
 
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.green,
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(10),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(10),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -37,19 +91,13 @@ class _SignUpPageState extends State<SignUp> {
       );
 
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registration successful!")),
-        );
+        _showSuccessMessage("Registration successful");
         Navigator.pushReplacementNamed(context, '/Login');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['error'])),
-        );
+        _showErrorMessage(result['error']);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection error. Please try again.')),
-      );
+      _showErrorMessage('Connection error. Please try again.');
     } finally {
       setState(() => isLoading = false);
     }
@@ -107,7 +155,7 @@ class _SignUpPageState extends State<SignUp> {
                     label: 'Full Name',
                     controller: nameController,
                     validator: (v) =>
-                    v == null || v.isEmpty ? 'Full name required' : null,
+                        v == null || v.isEmpty ? 'Full name required' : null,
                   ),
                   const SizedBox(height: 15),
                   _buildTextField(
@@ -116,8 +164,7 @@ class _SignUpPageState extends State<SignUp> {
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Email required';
-                      final emailRegex =
-                      RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
                       if (!emailRegex.hasMatch(v.trim())) {
                         return 'Enter a valid email';
                       }
@@ -130,7 +177,7 @@ class _SignUpPageState extends State<SignUp> {
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
                     validator: (v) =>
-                    v == null || v.isEmpty ? 'Phone number required' : null,
+                        v == null || v.isEmpty ? 'Phone number required' : null,
                   ),
                   const SizedBox(height: 15),
                   _buildTextField(
@@ -159,9 +206,7 @@ class _SignUpPageState extends State<SignUp> {
                     obscureText: confirmPass,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        confirmPass
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        confirmPass ? Icons.visibility : Icons.visibility_off,
                         color: Colors.amber,
                       ),
                       onPressed: () =>
@@ -190,14 +235,14 @@ class _SignUpPageState extends State<SignUp> {
                         padding: const EdgeInsets.symmetric(vertical: 15),
                       ),
                       child: isLoading
-                          ? const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
+                          ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
-                        'Register',
-                        style:
-                        TextStyle(fontSize: 18, color: Colors.white),
-                      ),
+                              'Register',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -209,8 +254,7 @@ class _SignUpPageState extends State<SignUp> {
                         style: TextStyle(color: Colors.white),
                       ),
                       TextButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, '/Login'),
+                        onPressed: () => Navigator.pushNamed(context, '/Login'),
                         child: const Text(
                           'SignIn',
                           style: TextStyle(color: Color(0xFF3DB9EF)),

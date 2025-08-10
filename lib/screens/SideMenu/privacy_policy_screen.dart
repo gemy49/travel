@@ -45,7 +45,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     var cubit = context.read<CounterBloc>();
     return Scaffold(
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -109,25 +108,29 @@ class PrivacyPolicyScreen extends StatelessWidget {
               const SizedBox(height: 40),
 
               Center(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactUsScreen()));
-
-                  },
-                  icon: const Icon(Icons.contact_support),
-                  label: const Text(
-                    "Contact Us for More Information",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 15,
+                child: SizedBox(
+                  width: 320, // عرض كافي للنص ليظل في سطر واحد
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ContactUsScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.contact_support),
+                    label: const Text(
+                      "Contact Us for More Information",
+                      style: TextStyle(fontSize: 16),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
                   ),
                 ),

@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-
 import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,6 +17,33 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  void _showSnackBarMessage(String message, Color bgColor, IconData icon) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: bgColor,
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(10),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -41,18 +66,25 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setString("name", userData['user']['name']);
         await prefs.setString("phone", userData['user']['phone']);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Welcome ${userData['user']['name']}!")),
+        _showSnackBarMessage(
+          "Welcome ${userData['user']['name']}",
+          Colors.green,
+          Icons.check_circle_outline,
         );
+
         Navigator.pushReplacementNamed(context, '/BottomNavigationBar');
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(result['error'])));
+        _showSnackBarMessage(
+          "Incorrect email or password",
+          Colors.red,
+          Icons.error_outline,
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An error occurred. Please try again.')),
+      _showSnackBarMessage(
+        'An error occurred. Please try again.',
+        Colors.red,
+        Icons.error_outline,
       );
     } finally {
       setState(() => isLoading = false);
@@ -86,6 +118,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Text(
+                          'Fly High',
+                          style: TextStyle(
+                            fontSize: constraints.maxHeight * 0.06,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                offset: const Offset(1, 1),
+                                blurRadius: 2,
+                                color: Colors.black.withOpacity(0.3),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: constraints.maxHeight * 0.05),
+
                         TextFormField(
                           keyboardType: TextInputType.emailAddress,
                           controller: emailController,
@@ -162,8 +211,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-
-                        // 🔽 زر نسيت كلمة المرور
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
@@ -176,9 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-
                         SizedBox(height: constraints.maxHeight * 0.02),
-
                         SizedBox(
                           width: constraints.maxHeight * 0.3,
                           child: ElevatedButton(

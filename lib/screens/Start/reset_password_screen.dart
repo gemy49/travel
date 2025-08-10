@@ -16,7 +16,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   late TextEditingController _tokenController;
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
+
   bool _loading = false;
+  bool pass = true;
+  bool confirmPass = true;
 
   @override
   void initState() {
@@ -34,25 +39,47 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.dispose();
   }
 
+  void _showSnackBar(Color bgColor, IconData icon, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: bgColor,
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(10),
+      ),
+    );
+  }
+
   Future<void> _resetPassword() async {
+    if (!_formKey.currentState!.validate()) {
+      // لو في خطأ في التحقق، مابنعملش حاجة
+      return;
+    }
+
     final email = _emailController.text.trim();
     final token = _tokenController.text.trim();
     final newPassword = _newPasswordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty ||
-        token.isEmpty ||
-        newPassword.isEmpty ||
-        confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
-
     if (newPassword != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
+      _showSnackBar(
+        Colors.orange,
+        Icons.warning_amber_rounded,
+        'Passwords do not match',
       );
       return;
     }
@@ -70,19 +97,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       final data = result['data'];
 
       if (statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password reset successful')),
+        _showSnackBar(
+          Colors.green,
+          Icons.check_circle_outline,
+          'Password reset successful',
         );
         Navigator.pushReplacementNamed(context, '/login');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $data')),
-        );
+        _showSnackBar(Colors.red, Icons.error_outline, 'Failed: $data');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _showSnackBar(Colors.red, Icons.error_outline, 'Error: $e');
     } finally {
       setState(() => _loading = false);
     }
@@ -101,53 +126,109 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Reset Password",
-                  style: TextStyle(
-                    fontSize: 26,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(_emailController, "Email"),
-                const SizedBox(height: 15),
-                _buildTextField(_tokenController, "Verification Code"),
-                const SizedBox(height: 15),
-                _buildTextField(_newPasswordController, "New Password",
-                    obscure: true),
-                const SizedBox(height: 15),
-                _buildTextField(
-                    _confirmPasswordController, "Confirm Password",
-                    obscure: true),
-                const SizedBox(height: 25),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : _resetPassword,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: const Color(0xFF3DB9EF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Reset Password",
+                    style: TextStyle(
+                      fontSize: 26,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: _loading
-                        ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                        : const Text("Reset Password"),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  _buildTextFormField(
+                    _emailController,
+                    "Email",
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Email is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  _buildTextFormField(
+                    _tokenController,
+                    "Verification Code",
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Verification code is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  _buildTextFormField(
+                    _newPasswordController,
+                    "New Password",
+                    obscure: pass,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        pass ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.amber,
+                      ),
+                      onPressed: () => setState(() => pass = !pass),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'New password is required';
+                      }
+                      if (val.trim().length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  _buildTextFormField(
+                    _confirmPasswordController,
+                    "Confirm Password",
+                    obscure: confirmPass,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        confirmPass ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.amber,
+                      ),
+                      onPressed: () =>
+                          setState(() => confirmPass = !confirmPass),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Please confirm your password';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 25),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _loading ? null : _resetPassword,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color(0xFF3DB9EF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: _loading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text("Reset Password"),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -155,9 +236,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label,
-      {bool obscure = false}) {
-    return TextField(
+  Widget _buildTextFormField(
+    TextEditingController controller,
+    String label, {
+    bool obscure = false,
+    Widget? suffixIcon,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
       controller: controller,
       obscureText: obscure,
       style: const TextStyle(color: Color(0xFF3DB9EF)),
@@ -171,7 +257,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Color(0xFF3DB9EF), width: 2),
         ),
+        suffixIcon: suffixIcon,
       ),
+      validator: validator,
     );
   }
 }

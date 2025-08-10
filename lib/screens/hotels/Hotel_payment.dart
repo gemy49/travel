@@ -14,14 +14,15 @@ import '../../services/storage_keys.dart'; // Adjust path if needed
 class HotelPaymentScreen extends StatefulWidget {
   final HotelBookingData bookingData;
 
-  const HotelPaymentScreen({Key? key, required this.bookingData}) : super(key: key);
+  const HotelPaymentScreen({Key? key, required this.bookingData})
+    : super(key: key);
 
   @override
   State<HotelPaymentScreen> createState() => _HotelPaymentScreenState();
 }
 
 class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
-  static  Color primaryColor = Colors.blue.shade500; // Or Colors.blue.shade500;
+  static Color primaryColor = Colors.blue.shade500; // Or Colors.blue.shade500;
   static const double defaultBorderRadius = 12.0;
 
   final _formKey = GlobalKey<FormState>();
@@ -35,7 +36,8 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
   final TextEditingController _cardNumberController = TextEditingController();
   final TextEditingController _expiryDateController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
-  final TextEditingController _cardHolderNameController = TextEditingController();
+  final TextEditingController _cardHolderNameController =
+      TextEditingController();
 
   // --- Data from bookingData ---
   late final Hotel hotel;
@@ -43,7 +45,6 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
   late final double totalPrice;
   late final DateTime CheckInDate;
   late final DateTime CheckOutDate;
-
 
   bool _isBookingInProgress = false;
   @override
@@ -53,21 +54,25 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
     hotel = widget.bookingData.hotel;
     selectedRooms = widget.bookingData.selectedRooms;
     totalPrice = widget.bookingData.totalPrice;
-    CheckInDate = widget.bookingData.checkInDate ;
-    CheckOutDate = widget.bookingData.checkOutDate ;
- }
-// Modify the function signature to accept an optional debugId
+    CheckInDate = widget.bookingData.checkInDate;
+    CheckOutDate = widget.bookingData.checkOutDate;
+  }
+
+  // Modify the function signature to accept an optional debugId
   Future<void> _saveHotelBookingToLocalStorage({String? debugId}) async {
     print("Hotel Payment Save Function: Called with debug ID: $debugId");
     try {
       final String? userKey = await getUserSpecificKey('hotel_bookings');
       if (userKey == null) {
-        print("Hotel Payment Save Function: User key is null for debug ID: $debugId");
+        print(
+          "Hotel Payment Save Function: User key is null for debug ID: $debugId",
+        );
         return; // Handle missing email
       }
 
       final prefs = await SharedPreferences.getInstance();
-      final List<String> existingHotelBookingsJson = prefs.getStringList(userKey) ?? [];
+      final List<String> existingHotelBookingsJson =
+          prefs.getStringList(userKey) ?? [];
 
       // Create hotel booking data map (as before)
       final Map<String, dynamic> hotelBookingDataMap = {
@@ -85,16 +90,23 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
       };
 
       final String newHotelBookingJson = jsonEncode(hotelBookingDataMap);
-      print("Hotel Payment Save Function: Prepared JSON for debug ID: $debugId");
+      print(
+        "Hotel Payment Save Function: Prepared JSON for debug ID: $debugId",
+      );
 
       existingHotelBookingsJson.add(newHotelBookingJson);
       await prefs.setStringList(userKey, existingHotelBookingsJson);
-      print("Hotel Payment Save Function: Hotel booking saved successfully to key '$userKey' for debug ID: $debugId");
+      print(
+        "Hotel Payment Save Function: Hotel booking saved successfully to key '$userKey' for debug ID: $debugId",
+      );
     } catch (e) {
-      print("Hotel Payment Save Function: Error saving hotel booking for debug ID: $debugId, Error: $e");
+      print(
+        "Hotel Payment Save Function: Error saving hotel booking for debug ID: $debugId, Error: $e",
+      );
       // Optionally, show an error message to the user
     }
   }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -133,7 +145,11 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildHotelDetailRow(Icons.hotel, "Hotel", hotel.name),
-                    _buildHotelDetailRow(Icons.location_on, "Location", hotel.city),
+                    _buildHotelDetailRow(
+                      Icons.location_on,
+                      "Location",
+                      hotel.city,
+                    ),
                     const SizedBox(height: 10),
                     const Text(
                       "Selected Rooms:",
@@ -145,9 +161,13 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                         padding: const EdgeInsets.only(bottom: 4.0),
                         child: Row(
                           children: [
-                            Text("${roomData['quantity']} x ${roomData['type']}"),
+                            Text(
+                              "${roomData['quantity']} x ${roomData['type']}",
+                            ),
                             const Spacer(),
-                            Text("\$${roomData['totalPriceForType'].toStringAsFixed(2)}"),
+                            Text(
+                              "\$${roomData['totalPriceForType'].toStringAsFixed(2)}",
+                            ),
                           ],
                         ),
                       );
@@ -192,7 +212,9 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
+                        if (!RegExp(
+                          r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+                        ).hasMatch(value)) {
                           return 'Please enter a valid email';
                         }
                         return null;
@@ -309,72 +331,87 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                   onPressed: _isBookingInProgress
                       ? null
                       : () async {
-                    if (_formKey.currentState!.validate()) {
-                      final String debugId = DateTime.now().millisecondsSinceEpoch.toString();
-                      setState(() {
-                        _isBookingInProgress = true;
-                      });
+                          if (_formKey.currentState!.validate()) {
+                            final String debugId = DateTime.now()
+                                .millisecondsSinceEpoch
+                                .toString();
+                            setState(() {
+                              _isBookingInProgress = true;
+                            });
 
-                      try {
-                        for (var room in selectedRooms) {
-                          await ApiService().bookRoom(
-                              id: hotel.id,
-                            roomType: room['type'],
-                            quantity: room['quantity'],
-                          );
-                        }
-                        // 1️⃣ احجز الغرف على السيرفر
-                        await ApiService().addHotelBookingForUser(
-                          bookingData: {
-                            "bookingId": DateTime.now().millisecondsSinceEpoch.toString(),
-                            "hotelId": hotel.id,
-                            "hotelName": hotel.name,
-                            "city": hotel.city,
-                            "rooms": selectedRooms
-                                .map((room) => {
-                              "type": room['type'],
-                              "count": room['quantity'],
-                            })
-                                .toList(),
-                            "totalCost": totalPrice,
-                            "fullName": _nameController.text.trim(),
-                            "phone": _phoneController.text.trim(),
-                            "bookingDate": DateTime.now().toIso8601String(),
-                            "checkIn":CheckInDate.toString(),
-                            "checkOut":CheckOutDate.toString(),
-                          },
-                        );
+                            try {
+                              for (var room in selectedRooms) {
+                                await ApiService().bookRoom(
+                                  id: hotel.id,
+                                  roomType: room['type'],
+                                  quantity: room['quantity'],
+                                );
+                              }
+                              // 1️⃣ احجز الغرف على السيرفر
+                              await ApiService().addHotelBookingForUser(
+                                bookingData: {
+                                  "bookingId": DateTime.now()
+                                      .millisecondsSinceEpoch
+                                      .toString(),
+                                  "hotelId": hotel.id,
+                                  "hotelName": hotel.name,
+                                  "city": hotel.city,
+                                  "rooms": selectedRooms
+                                      .map(
+                                        (room) => {
+                                          "type": room['type'],
+                                          "count": room['quantity'],
+                                        },
+                                      )
+                                      .toList(),
+                                  "totalCost": totalPrice,
+                                  "fullName": _nameController.text.trim(),
+                                  "phone": _phoneController.text.trim(),
+                                  "bookingDate": DateTime.now()
+                                      .toIso8601String(),
+                                  "checkIn": CheckInDate.toString(),
+                                  "checkOut": CheckOutDate.toString(),
+                                },
+                              );
 
-                        // 3️⃣ خزّن نسخة محليًا
-                        await _saveHotelBookingToLocalStorage(debugId: debugId);
+                              // 3️⃣ خزّن نسخة محليًا
+                              await _saveHotelBookingToLocalStorage(
+                                debugId: debugId,
+                              );
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("✅ Booking confirmed for ${hotel.name} & saved!"),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    "✅ Booking confirmed for ${hotel.name} & saved",
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
 
-                        Navigator.pushReplacementNamed(context, '/BottomNavigationBar');
+                              Navigator.pushReplacementNamed(
+                                context,
+                                '/BottomNavigationBar',
+                              );
+                            } catch (error) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("❌ Booking failed: $error"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } finally {
+                              final hotelProvider = Provider.of<HotelProvider>(
+                                context,
+                                listen: false,
+                              );
+                              await hotelProvider.fetchHotels();
 
-                      } catch (error) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("❌ Booking failed: $error"),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      } finally {
-                        final hotelProvider = Provider.of<HotelProvider>(context, listen: false);
-                        await hotelProvider.fetchHotels();
-
-                        setState(() {
-                          _isBookingInProgress = false;
-                        });
-                      }
-                    }
-                  },
-
+                              setState(() {
+                                _isBookingInProgress = false;
+                              });
+                            }
+                          }
+                        },
 
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
@@ -386,21 +423,26 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                   ),
                   icon: _isBookingInProgress
                       ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
                       : const Icon(Icons.check_circle, size: 24),
                   label: Text(
                     _isBookingInProgress ? "Processing..." : "Confirm Booking ",
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-// ... rest of the widget tree ...
+              // ... rest of the widget tree ...
             ],
           ),
         ),
@@ -409,7 +451,11 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
   }
 
   // --- Helper Widget: Builds a styled section card with an icon ---
-  Widget _buildSectionCard({required IconData icon, required String title, required Widget child}) {
+  Widget _buildSectionCard({
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
     return Card(
       elevation: 4, // Subtle shadow
       shape: RoundedRectangleBorder(
@@ -423,7 +469,11 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
             // Section Header Row
             Row(
               children: [
-                Icon(icon, color: primaryColor, size: 24), // Icon with color and size
+                Icon(
+                  icon,
+                  color: primaryColor,
+                  size: 24,
+                ), // Icon with color and size
                 const SizedBox(width: 10),
                 Text(
                   title,
@@ -444,7 +494,13 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
   }
 
   // --- Helper Widget: Builds a styled row for hotel details ---
-  Widget _buildHotelDetailRow(IconData icon, String label, String value, {bool isBold = false, bool isTotal = false}) {
+  Widget _buildHotelDetailRow(
+    IconData icon,
+    String label,
+    String value, {
+    bool isBold = false,
+    bool isTotal = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -466,7 +522,9 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: isTotal ? primaryColor : Colors.black87, // Highlight total price
+              color: isTotal
+                  ? primaryColor
+                  : Colors.black87, // Highlight total price
             ),
           ),
         ],
@@ -487,16 +545,25 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: labelText,
-        prefixIcon: Icon(prefixIcon, color: primaryColor), // Colored prefix icon
+        prefixIcon: Icon(
+          prefixIcon,
+          color: primaryColor,
+        ), // Colored prefix icon
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide(color: primaryColor, width: 2.0), // Highlight on focus
+          borderSide: BorderSide(
+            color: primaryColor,
+            width: 2.0,
+          ), // Highlight on focus
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 12.0), // Better padding
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 15.0,
+          horizontal: 12.0,
+        ), // Better padding
       ),
       validator: validator,
     );
@@ -517,16 +584,25 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: labelText,
-        prefixIcon: Icon(prefixIcon, color: primaryColor), // Colored prefix icon
+        prefixIcon: Icon(
+          prefixIcon,
+          color: primaryColor,
+        ), // Colored prefix icon
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide(color: primaryColor, width: 2.0), // Highlight on focus
+          borderSide: BorderSide(
+            color: primaryColor,
+            width: 2.0,
+          ), // Highlight on focus
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 12.0), // Better padding
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 15.0,
+          horizontal: 12.0,
+        ), // Better padding
       ),
       validator: validator,
     );
