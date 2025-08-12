@@ -17,6 +17,9 @@ import 'hotels/MyHotels.dart';
 import 'package:FlyHigh/providers/counter_bloc.dart';
 import 'package:FlyHigh/providers/counter_state.dart';
 
+// *** إضافة الاستيراد لصفحة الشات بوت ***
+import 'package:FlyHigh/screens/chat_bot.dart';
+
 class Bottomnavigationbar extends StatefulWidget {
   const Bottomnavigationbar({super.key});
 
@@ -30,7 +33,6 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
   String? profilePhotoUrl;
   final ImageService imageService = ImageService();
 
-  // ✅ دالة موحدة لعرض الرسائل
   void showStyledMessage(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -89,7 +91,6 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
     }
   }
 
-  // ✅ فنكشن تأكيد الخروج
   Future<bool> showExitConfirmationDialog(BuildContext context) async {
     return await showDialog(
           context: context,
@@ -142,8 +143,7 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () =>
-          showExitConfirmationDialog(context), // ✅ التحكم في زر الرجوع
+      onWillPop: () => showExitConfirmationDialog(context),
       child: BlocProvider(
         create: (BuildContext context) => CounterBloc(),
         child: BlocBuilder<CounterBloc, PageState>(
@@ -318,8 +318,27 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                               );
                             },
                           ),
+
                           const Divider(indent: 16, endIndent: 16),
+
                           _buildDrawerSectionTitle("App", Colors.blue.shade500),
+
+                          // تم نقل زر Chat Bot ليكون أول عنصر في قسم App
+                          _buildDrawerListItem(
+                            context: context,
+                            icon: Icons.chat_bubble_outline,
+                            title: 'Chat Bot',
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ChatPage(),
+                                ),
+                              );
+                            },
+                          ),
+
                           _buildDrawerListItem(
                             context: context,
                             icon: Icons.menu_book,
