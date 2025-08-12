@@ -11,7 +11,7 @@ import '../models/hotel.dart';
 import '../models/weather.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.100.10:3000/api';
+  final String baseUrl = 'http://192.168.1.100:3000/api';
 
   // ===== Helper to get stored userId =====
   Future<int?> _getUserId() async {
@@ -280,7 +280,7 @@ class ApiService {
   }
 
   // ===== Cancel Booking (تركته زي ما هو) =====
-  Future<void> cancelBooking(String email, int flightId) async {
+  Future<void> cancelBooking(String email, String flightId) async {
     final userId = await _getUserId();
     final token = await _Authorization();
 
@@ -292,9 +292,10 @@ class ApiService {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       },
-      body: jsonEncode({"flightId": flightId}),
+      body: jsonEncode({"bFId": flightId}),
     );
     if (res.statusCode != 200) {
+      print(res.body);
       throw Exception("Failed to cancel booking");
     }
   }

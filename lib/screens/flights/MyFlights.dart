@@ -54,13 +54,13 @@ class _MyFlightsScreenState extends State<MyFlightsScreen> {
     }
   }
 
-  Future<void> _cancelBooking(int bookingId) async {
+  Future<void> _cancelBooking(String flightId) async {
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString('email') ?? '';
     if (email.isEmpty) return;
 
     try {
-      await ApiService().cancelBooking(email, bookingId);
+      await ApiService().cancelBooking(email, flightId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -234,7 +234,7 @@ class _MyFlightsScreenState extends State<MyFlightsScreen> {
                                 foregroundColor: Colors.white),
                             onPressed: () {
                               Navigator.pop(ctx);
-                              _cancelBooking(booking.id);
+                              _cancelBooking(booking.bFId );
                             },
                             child: const Text("Yes, Cancel"),
                           ),

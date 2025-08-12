@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Icons.check_circle_outline,
         );
 
-        Navigator.pushReplacementNamed(context, '/BottomNavigationBar');
+        Navigator.pushNamedAndRemoveUntil(context, '/BottomNavigationBar', (route) => false);
       } else {
         _showSnackBarMessage(
           "Incorrect email or password",

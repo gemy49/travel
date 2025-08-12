@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
     },
     {
       'title': '3. Explore new places',
-      'pageIndex': 3,
+      'pageIndex': 4,
       "Id": [0,1, 2, 3, 4,],
       'images': [
         'assets/places/London.jpg',

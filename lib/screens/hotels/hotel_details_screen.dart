@@ -1,5 +1,7 @@
 // lib/screens/hotels/hotel_details_screen.dart
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 // Assuming HotelRoom is defined within hotel.dart or imported separately
 // import 'package:FlyHigh/models/hotel_room.dart'; // If separate
@@ -109,15 +111,34 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     });
   }
 
+  // Inside the _HotelDetailsScreenState class
+
+  /// Calculates the total price based on selected rooms and number of nights.
   double _calculateTotalPrice() {
     if (_hotel == null) return 0.0;
+
+    // --- Calculate number of nights ---
+    int numberOfNights = 1; // Default to 1 night if dates are not selected or invalid
+    if (_checkInDate != null && _checkOutDate != null) {
+      // Calculate the difference in days
+      numberOfNights = _checkOutDate!.difference(_checkInDate!).inDays;
+      // Ensure it's at least 1 night
+      if (numberOfNights <= 0) {
+        numberOfNights = 1;
+      }
+    }
+    // --- End calculate number of nights ---
+
     double total = 0.0;
     _selectedRoomQuantities.forEach((roomType, quantity) {
-      final room = _hotel!.availableRooms.firstWhere(
-            (r) => r.type == roomType,
-        orElse: () => availableRoom(type: roomType, price: 0, quantity: 0),
-      );
-      total += room.price * quantity;
+      if (quantity > 0) { // Only calculate for rooms with quantity > 0
+        final room = _hotel!.availableRooms.firstWhere(
+              (r) => r.type == roomType,
+          orElse: () => availableRoom(type: roomType, price: 0, quantity: 0),
+        );
+        // Multiply by price, quantity, and number of nights
+        total += room.price * quantity * numberOfNights;
+      }
     });
     return total;
   }
@@ -182,43 +203,19 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     );
   }
 
-  void _openMap(BuildContext context, String latitude, String longitude) async {
-    // Replace with actual coordinates if available in your model
-    final Uri mapUrl = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
+  Future<void> openMap(String lat, String lng) async {
+    final Uri googleMapsAppUrl = Uri.parse("comgooglemaps://?q=$lat,$lng");
+    final Uri googleMapsWebUrl = Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng");
 
-    try {
-      if (await canLaunchUrl(mapUrl)) {
-        await launchUrl(
-          mapUrl,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content:
-              Text('Cannot open maps. Please ensure a maps app is installed.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      print('Error opening map: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('An error occurred while opening the map.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    // حاول يفتح تطبيق Google Maps أولًا
+    if (await canLaunchUrl(googleMapsAppUrl)) {
+      await launchUrl(googleMapsAppUrl, mode: LaunchMode.externalApplication);
     }
-  }
-  // Inside the _HotelDetailsScreenState class
-
-// Function to select check-in date
+    // لو مش موجود افتح المتصفح
+    else {
+      await launchUrl(googleMapsWebUrl, mode: LaunchMode.externalApplication);
+    }
+  }// Function to select check-in date
   Future<void> _selectCheckInDate(BuildContext context) async {
     final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
@@ -428,7 +425,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                             ElevatedButton.icon(
                               onPressed: () {
                                 // Use actual coordinates if available
-                                _openMap(context, hotel.lat ?? "", hotel.lng ?? "");
+                                openMap(hotel.lat ?? "", hotel.lng ?? "");
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryColor,
@@ -524,8 +521,28 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       ),
                     ],
                   ),
+                  if (_checkInDate != null && _checkOutDate != null)
+                    Builder( // Use Builder to access context if needed inside the logic
+                      builder: (context) {
+                        final int nights = _checkOutDate!.difference(_checkInDate!).inDays;
+                        if (nights > 0) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(
+                              'Stay Duration: $nights Night${nights > 1 ? 's' : ''}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: primaryColor, // Use your primary color
+                              ),
+                            ),
+                          );
+                        } else {
+                          return const SizedBox.shrink(); // Return empty widget if nights <= 0
+                        }
+                      },
+                    ),
                   const SizedBox(height: 15),
-
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(

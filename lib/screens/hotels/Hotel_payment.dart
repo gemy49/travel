@@ -388,9 +388,10 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                                 ),
                               );
 
-                              Navigator.pushReplacementNamed(
+                              Navigator.pushNamedAndRemoveUntil(
                                 context,
                                 '/BottomNavigationBar',
+                                (route) => false,
                               );
                             } catch (error) {
                               ScaffoldMessenger.of(context).showSnackBar(

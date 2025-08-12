@@ -73,11 +73,7 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
       }
 
       await ApiService().bookFlight(
-        bookingData: {
-          "flightId": flight.id, // ID من الـ Flight نفسه
-          "adults": numberOfAdults,
-          "children": numberOfChildren,
-        },
+        bookingData: booking,
       );
       print("Flight booking sent to server successfully");
     } catch (e) {
@@ -252,14 +248,14 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                                 .toString();
 
                             final bookingData = {
-                              "flightId": flightId,
-                              "id": flight.id,
+                              "flightId": flight.id,
+                              "bFId": flightId,
                               "from": flight.from,
                               "to": flight.to,
                               "date": flight.date,
                               "departureTime": flight.departureTime,
                               "arrivalTime": flight.arrivalTime,
-                              "price": flight.price,
+                              "price": totalPrice,
                               "airline": flight.airline,
                               "adults": numberOfAdults,
                               "children": numberOfChildren,
@@ -278,9 +274,10 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                                 ),
                               );
 
-                              Navigator.pushReplacementNamed(
+                              Navigator.pushNamedAndRemoveUntil(
                                 context,
                                 '/BottomNavigationBar',
+                                (route) => false,
                               );
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(

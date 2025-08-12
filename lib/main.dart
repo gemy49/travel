@@ -7,11 +7,9 @@ import 'package:FlyHigh/screens/Start/splashScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:FlyHigh/screens/BottomNavigationBar.dart';
 import 'package:FlyHigh/screens/Start/loginScreen.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'providers/counter_bloc.dart';
 import 'providers/routes.dart';
-import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 // Providers
 import 'providers/flight_provider.dart';
@@ -20,7 +18,6 @@ import 'providers/place_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -43,7 +40,7 @@ class MyApp extends StatelessWidget {
         onGenerateRoute: RouteGenerator.generateRoute,
         initialRoute: '/',
         routes: {
-          '/': (context) => const SplashScreen(),
+          '/': (context) => SplashScreen(),
           '/Login': (context) => const LoginScreen(),
           '/signup': (context) => const SignUp(),
           '/BottomNavigationBar': (context) => const Bottomnavigationbar(),

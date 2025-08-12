@@ -1,5 +1,5 @@
 class Booking {
-  final String flightId;
+  final String bFId;
   final int id;
   final String from;
   final String to;
@@ -13,7 +13,7 @@ class Booking {
   final int children;
 
   Booking({
-    required this.flightId,
+    required this.bFId,
     required this.id,
     required this.from,
     required this.to,
@@ -29,7 +29,7 @@ class Booking {
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
-      flightId: json["flightId"] ?? "",
+      bFId: json["bFId"] ?? "",
       id: json["id"] ?? 0,
       from: json["from"] ?? "",
       to: json["to"] ?? "",
@@ -48,7 +48,7 @@ class Booking {
 
   Map<String, dynamic> toJson() {
     return {
-      "flightId": flightId,
+      "bFId": bFId,
       "id": id,
       "from": from,
       "to": to,

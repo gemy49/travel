@@ -144,125 +144,127 @@ class _SignUpPageState extends State<SignUp> {
             fit: BoxFit.cover,
           ),
         ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  _buildTextField(
-                    label: 'Full Name',
-                    controller: nameController,
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Full name required' : null,
-                  ),
-                  const SizedBox(height: 15),
-                  _buildTextField(
-                    label: 'Email',
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Email required';
-                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                      if (!emailRegex.hasMatch(v.trim())) {
-                        return 'Enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  _buildTextField(
-                    label: 'Phone Number',
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Phone number required' : null,
-                  ),
-                  const SizedBox(height: 15),
-                  _buildTextField(
-                    label: 'Password',
-                    controller: passwordController,
-                    obscureText: pass,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        pass ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.amber,
-                      ),
-                      onPressed: () => setState(() => pass = !pass),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _buildTextField(
+                      label: 'Full Name',
+                      controller: nameController,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Full name required' : null,
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Password required';
-                      if (v.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  _buildTextField(
-                    label: 'Confirm Password',
-                    controller: confirmPasswordController,
-                    obscureText: confirmPass,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        confirmPass ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.amber,
-                      ),
-                      onPressed: () =>
-                          setState(() => confirmPass = !confirmPass),
+                    const SizedBox(height: 15),
+                    _buildTextField(
+                      label: 'Email',
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Email required';
+                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                        if (!emailRegex.hasMatch(v.trim())) {
+                          return 'Enter a valid email';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      if (v != passwordController.text) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3DB9EF),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    const SizedBox(height: 15),
+                    _buildTextField(
+                      label: 'Phone Number',
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Phone number required' : null,
+                    ),
+                    const SizedBox(height: 15),
+                    _buildTextField(
+                      label: 'Password',
+                      controller: passwordController,
+                      obscureText: pass,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          pass ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.amber,
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        onPressed: () => setState(() => pass = !pass),
                       ),
-                      child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              'Register',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Password required';
+                        if (v.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 15),
+                    _buildTextField(
+                      label: 'Confirm Password',
+                      controller: confirmPasswordController,
+                      obscureText: confirmPass,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          confirmPass ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.amber,
+                        ),
+                        onPressed: () =>
+                            setState(() => confirmPass = !confirmPass),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (v != passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF3DB9EF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                        ),
+                        child: isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                'Register',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      const Text(
-                        ' Already have an account?',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/Login'),
-                        child: const Text(
-                          'SignIn',
-                          style: TextStyle(color: Color(0xFF3DB9EF)),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        const Text(
+                          ' Already have an account?',
+                          style: TextStyle(color: Colors.white),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        TextButton(
+                          onPressed: () => Navigator.pushNamed(context, '/Login'),
+                          child: const Text(
+                            'SignIn',
+                            style: TextStyle(color: Color(0xFF3DB9EF)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
