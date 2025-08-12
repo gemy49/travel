@@ -29,14 +29,42 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
-        .animate(_animationController);
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(_animationController);
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  /// 🔹 دالة موحدة لعرض الرسائل
+  void _showSnackBar(Color bgColor, IconData icon, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: bgColor,
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(10),
+      ),
+    );
   }
 
   Future<void> _loadHotelBookings() async {
@@ -69,7 +97,6 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
     }
   }
 
-
   Future<void> _deleteBooking(int index) async {
     final booking = _hotelBookings[index];
 
@@ -79,22 +106,24 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
 
       if (email == null) return;
 
-      await ApiService()
-          .cancelHotelBooking( bookingId: booking.bookingId);
+      await ApiService().cancelHotelBooking(bookingId: booking.bookingId);
 
       setState(() {
         _hotelBookings.removeAt(index);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Booking deleted successfully")),
+      _showSnackBar(
+        Colors.green,
+        Icons.check_circle_outline,
+        "Booking deleted successfully",
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Failed to delete booking: $e")),
+      _showSnackBar(
+        Colors.red,
+        Icons.error_outline,
+        "Failed to delete booking: $e",
       );
-    }
-    finally {
+    } finally {
       final hotelProvider = Provider.of<HotelProvider>(context, listen: false);
       await hotelProvider.fetchHotels();
     }
@@ -103,8 +132,7 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
-    final scaffoldBackgroundColor =
-        Theme.of(context).scaffoldBackgroundColor;
+    final scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
       appBar: AppBar(
@@ -121,41 +149,43 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
           : _hotelBookings.isEmpty
           ? _buildEmptyState()
           : FadeTransition(
-        opacity: _fadeAnimation,
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 12.0, vertical: 16.0),
-          itemCount: _hotelBookings.length,
-          itemBuilder: (context, index) {
-            final booking = _hotelBookings[index];
+              opacity: _fadeAnimation,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12.0,
+                  vertical: 16.0,
+                ),
+                itemCount: _hotelBookings.length,
+                itemBuilder: (context, index) {
+                  final booking = _hotelBookings[index];
 
-            final hotel = Hotel(
-              id: booking.hotelId,
-              city: booking.city,
-              location: '',
-              name: booking.hotelName,
-              onSale: false,
-              rate: 0,
-              image: '',
-              description: '',
-              amenities: [],
-              contact: {},
-              availableRooms: [],
-              lat: '',
-              lng: '',
-            );
+                  final hotel = Hotel(
+                    id: booking.hotelId,
+                    city: booking.city,
+                    location: '',
+                    name: booking.hotelName,
+                    onSale: false,
+                    rate: 0,
+                    image: '',
+                    description: '',
+                    amenities: [],
+                    contact: {},
+                    availableRooms: [],
+                    lat: '',
+                    lng: '',
+                  );
 
-            return _buildHotelBookingCard(
-              context,
-              hotel,
-              booking.rooms,
-              booking.totalCost,
-              primaryColor,
-              index,
-            );
-          },
-        ),
-      ),
+                  return _buildHotelBookingCard(
+                    context,
+                    hotel,
+                    booking.rooms,
+                    booking.totalCost,
+                    primaryColor,
+                    index,
+                  );
+                },
+              ),
+            ),
     );
   }
 
@@ -166,8 +196,10 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
         children: [
           Icon(Icons.hotel_outlined, size: 60, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          const Text("No hotels booked yet.",
-              style: TextStyle(fontSize: 18, color: Colors.grey)),
+          const Text(
+            "No hotels booked yet.",
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
           const SizedBox(height: 8),
           Text(
             "Explore hotels and make your first booking!",
@@ -180,13 +212,13 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
   }
 
   Widget _buildHotelBookingCard(
-      BuildContext context,
-      Hotel hotel,
-      List<BookedRoom> selectedRooms,
-      double totalPrice,
-      Color primaryColor,
-      int index,
-      ) {
+    BuildContext context,
+    Hotel hotel,
+    List<BookedRoom> selectedRooms,
+    double totalPrice,
+    Color primaryColor,
+    int index,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -213,27 +245,35 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(hotel.name,
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        hotel.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 4),
-                      Text(hotel.city,
-                          style: TextStyle(
-                              fontSize: 14, color: Colors.grey[600])),
+                      Text(
+                        hotel.city,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      color: Colors.redAccent),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
                   onPressed: () {
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
                         title: const Text("Confirm Deletion"),
                         content: const Text(
-                            "Are you sure you want to delete this hotel booking?"),
+                          "Are you sure you want to delete this hotel booking?",
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
@@ -261,17 +301,17 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
             const SizedBox(height: 16),
             Divider(color: Colors.grey[300], thickness: 0.8),
             const SizedBox(height: 16),
-            const Text("Booked Rooms",
-                style:
-                TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const Text(
+              "Booked Rooms",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 10),
             ...selectedRooms.map((room) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Row(
                   children: [
-                    Expanded(
-                        child: Text("${room.quantity} x ${room.type}")),
+                    Expanded(child: Text("${room.quantity} x ${room.type}")),
                   ],
                 ),
               );
@@ -282,14 +322,18 @@ class _MyHotelsScreenState extends State<MyHotelsScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Total Paid:",
-                    style:
-                    TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                Text("\$${totalPrice.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green)),
+                const Text(
+                  "Total Paid:",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  "\$${totalPrice.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
               ],
             ),
           ],

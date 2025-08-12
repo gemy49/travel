@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:FlyHigh/models/flight.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/Flights_booking_data.dart';
@@ -42,7 +43,7 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
     numberOfChildren = widget.bookingData.numberOfChildren;
     totalPrice =
         (flight.price * numberOfAdults) +
-        (flight.price * (numberOfChildren * .5));
+        (flight.price * (numberOfChildren * 0.5));
     numberOfSeats = numberOfAdults + numberOfChildren;
   }
 
@@ -72,14 +73,42 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
         return;
       }
 
-      await ApiService().bookFlight(
-        bookingData: booking,
-      );
+      await ApiService().bookFlight(bookingData: booking);
       print("Flight booking sent to server successfully");
     } catch (e) {
       print("Error saving booking to server: $e");
       rethrow;
     }
+  }
+
+  void showMessage(String message, {bool isSuccess = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isSuccess ? Colors.green : Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -173,11 +202,33 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                       labelText: "Card Number",
                       prefixIcon: Icons.credit_card,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(16),
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          String text = newValue.text.replaceAll(' ', '');
+                          String newText = '';
+                          for (int i = 0; i < text.length; i++) {
+                            newText += text[i];
+                            if ((i + 1) % 4 == 0 && i + 1 != text.length) {
+                              newText += ' ';
+                            }
+                          }
+                          return TextEditingValue(
+                            text: newText,
+                            selection: TextSelection.collapsed(
+                              offset: newText.length,
+                            ),
+                          );
+                        }),
+                      ],
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return 'Enter card number';
-                        if (value.length < 16)
+                        }
+                        if (value.replaceAll(' ', '').length != 16) {
                           return 'Card number must be 16 digits';
+                        }
                         return null;
                       },
                     ),
@@ -189,13 +240,38 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                             controller: _expiryDateController,
                             labelText: "MM/YY",
                             prefixIcon: Icons.date_range,
-                            keyboardType: TextInputType.datetime,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'\d|/'),
+                              ),
+                              LengthLimitingTextInputFormatter(5),
+                              TextInputFormatter.withFunction((
+                                oldValue,
+                                newValue,
+                              ) {
+                                String text = newValue.text;
+                                if (text.length == 2 &&
+                                    oldValue.text.length < text.length &&
+                                    !text.contains('/')) {
+                                  text += '/';
+                                }
+                                return TextEditingValue(
+                                  text: text,
+                                  selection: TextSelection.collapsed(
+                                    offset: text.length,
+                                  ),
+                                );
+                              }),
+                            ],
                             validator: (value) {
-                              if (value == null || value.isEmpty)
+                              if (value == null || value.isEmpty) {
                                 return 'Enter expiry date';
+                              }
                               final regex = RegExp(r'^(0[1-9]|1[0-2])\/\d{2}$');
-                              if (!regex.hasMatch(value))
+                              if (!regex.hasMatch(value)) {
                                 return 'Invalid format (MM/YY)';
+                              }
                               return null;
                             },
                           ),
@@ -208,11 +284,17 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                             prefixIcon: Icons.lock,
                             keyboardType: TextInputType.number,
                             obscureText: true,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(3),
+                            ],
                             validator: (value) {
-                              if (value == null || value.isEmpty)
+                              if (value == null || value.isEmpty) {
                                 return 'Enter CVV';
-                              if (value.length != 3)
+                              }
+                              if (value.length != 3) {
                                 return 'CVV must be 3 digits';
+                              }
                               return null;
                             },
                           ),
@@ -225,8 +307,9 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                       labelText: "Cardholder Name",
                       prefixIcon: Icons.person,
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return 'Enter cardholder name';
+                        }
                         return null;
                       },
                     ),
@@ -234,7 +317,6 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                 ),
               ),
               const SizedBox(height: 25),
-
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -246,7 +328,6 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                             final String flightId = DateTime.now()
                                 .millisecondsSinceEpoch
                                 .toString();
-
                             final bookingData = {
                               "flightId": flight.id,
                               "bFId": flightId,
@@ -266,25 +347,19 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                             try {
                               await _saveBookingToServer(bookingData);
                               await _saveBookingToLocalStorage(bookingData);
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("✅ Flight booked successfully"),
-                                  backgroundColor: Colors.green,
-                                ),
+                              showMessage(
+                                "Flight booked successfully",
+                                isSuccess: true,
                               );
-
                               Navigator.pushNamedAndRemoveUntil(
                                 context,
                                 '/BottomNavigationBar',
                                 (route) => false,
                               );
                             } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("❌ Booking failed: $e"),
-                                  backgroundColor: Colors.red,
-                                ),
+                              showMessage(
+                                "Booking failed: $e",
+                                isSuccess: false,
                               );
                             } finally {
                               setState(() => _isBookingInProgress = false);
@@ -407,11 +482,13 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
     String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: labelText,
         prefixIcon: Icon(prefixIcon, color: primaryColor),

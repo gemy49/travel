@@ -1,4 +1,4 @@
-import 'dart:io'; // عشان exit(0) يشتغل
+import 'dart:io';
 import 'package:FlyHigh/screens/Favorite.dart' hide CounterBloc;
 import 'package:FlyHigh/screens/SideMenu/about_us_screen.dart';
 import 'package:FlyHigh/screens/SideMenu/faq_screen.dart';
@@ -30,6 +30,22 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
   String? profilePhotoUrl;
   final ImageService imageService = ImageService();
 
+  // ✅ دالة موحدة لعرض الرسائل
+  void showStyledMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        backgroundColor: isError ? Colors.redAccent : Colors.blueAccent,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   Future<void> clearPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("IsLoggedIn");
@@ -55,9 +71,7 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
 
     final uploadedUrl = await imageService.uploadImage(imageFile);
     if (uploadedUrl == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("فشل رفع الصورة")),
-      );
+      showStyledMessage("Failed to upload image", isError: true);
       return;
     }
 
@@ -69,59 +83,55 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
       setState(() {
         profilePhotoUrl = uploadedUrl;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("تم تحديث صورة البروفايل")),
-      );
+      showStyledMessage("Profile picture updated successfully");
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("فشل تحديث الصورة في السيرفر")),
-      );
+      showStyledMessage("Failed to update image on server", isError: true);
     }
   }
 
   // ✅ فنكشن تأكيد الخروج
   Future<bool> showExitConfirmationDialog(BuildContext context) async {
     return await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.flight_takeoff, color: Colors.blueAccent),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                "Leaving the journey so soon?",
-                style: TextStyle(fontSize: 18),
-                softWrap: true,
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.flight_takeoff, color: Colors.blueAccent),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "Leaving the journey so soon?",
+                    style: TextStyle(fontSize: 18),
+                    softWrap: true,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              "Are you sure you want to exit the app?",
+              style: TextStyle(fontSize: 16),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text("No", style: TextStyle(color: Colors.blueAccent)),
               ),
-            ),
-          ],
-        ),
-        content: Text(
-          "Are you sure you want to exit the app?",
-          style: TextStyle(fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text("No", style: TextStyle(color: Colors.blueAccent)),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(123, 68, 255, 93),
+                ),
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text("Yes"),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent,
-            ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text("Yes"),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
   }
-
-
-
 
   @override
   void initState() {
@@ -132,7 +142,8 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () => showExitConfirmationDialog(context), // ✅ إضافة التحكم في زر الرجوع
+      onWillPop: () =>
+          showExitConfirmationDialog(context), // ✅ التحكم في زر الرجوع
       child: BlocProvider(
         create: (BuildContext context) => CounterBloc(),
         child: BlocBuilder<CounterBloc, PageState>(
@@ -198,21 +209,35 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                                 radius: 50,
                                 backgroundColor: Colors.grey[200],
                                 child: ClipOval(
-                                  child: (profilePhotoUrl != null && profilePhotoUrl!.isNotEmpty)
+                                  child:
+                                      (profilePhotoUrl != null &&
+                                          profilePhotoUrl!.isNotEmpty)
                                       ? Image.network(
-                                    profilePhotoUrl!,
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, progress) {
-                                      if (progress == null) return child;
-                                      return const Center(child: CircularProgressIndicator());
-                                    },
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset('assets/profile.png', fit: BoxFit.cover);
-                                    },
-                                  )
-                                      : Image.asset('assets/profile.png', fit: BoxFit.cover),
+                                          profilePhotoUrl!,
+                                          width: 100,
+                                          height: 100,
+                                          fit: BoxFit.cover,
+                                          loadingBuilder:
+                                              (context, child, progress) {
+                                                if (progress == null)
+                                                  return child;
+                                                return const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                );
+                                              },
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'assets/profile.png',
+                                                  fit: BoxFit.cover,
+                                                );
+                                              },
+                                        )
+                                      : Image.asset(
+                                          'assets/profile.png',
+                                          fit: BoxFit.cover,
+                                        ),
                                 ),
                               ),
                               Positioned(
@@ -220,10 +245,16 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                                 bottom: 0,
                                 child: CircleAvatar(
                                   radius: 15,
-                                  backgroundColor: Colors.white.withOpacity(0.8),
+                                  backgroundColor: Colors.white.withOpacity(
+                                    0.8,
+                                  ),
                                   child: IconButton(
                                     padding: EdgeInsets.zero,
-                                    icon: Icon(Icons.edit, size: 18, color: Colors.blue.shade500),
+                                    icon: Icon(
+                                      Icons.edit,
+                                      size: 18,
+                                      color: Colors.blue.shade500,
+                                    ),
                                     onPressed: pickAndUploadProfileImage,
                                   ),
                                 ),
@@ -255,14 +286,22 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                       child: ListView(
                         padding: EdgeInsets.zero,
                         children: [
-                          _buildDrawerSectionTitle("My Bookings", Colors.blue.shade500),
+                          _buildDrawerSectionTitle(
+                            "My Bookings",
+                            Colors.blue.shade500,
+                          ),
                           _buildDrawerListItem(
                             context: context,
                             icon: Icons.flight,
                             title: 'My Flights',
                             onTap: () {
                               Navigator.pop(context);
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const MyFlightsScreen()));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MyFlightsScreen(),
+                                ),
+                              );
                             },
                           ),
                           _buildDrawerListItem(
@@ -271,7 +310,12 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                             title: 'My Hotels',
                             onTap: () {
                               Navigator.pop(context);
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const MyHotelsScreen()));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MyHotelsScreen(),
+                                ),
+                              );
                             },
                           ),
                           const Divider(indent: 16, endIndent: 16),
@@ -281,7 +325,12 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                             icon: Icons.menu_book,
                             title: 'Privacy Policy',
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const PrivacyPolicyScreen(),
+                                ),
+                              );
                             },
                           ),
                           _buildDrawerListItem(
@@ -289,7 +338,12 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                             icon: Icons.groups,
                             title: 'About Us',
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutUsScreen()));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AboutUsScreen(),
+                                ),
+                              );
                             },
                           ),
                           _buildDrawerListItem(
@@ -297,7 +351,12 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                             icon: Icons.question_mark_rounded,
                             title: 'FAQ',
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const FaqScreen()));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const FaqScreen(),
+                                ),
+                              );
                             },
                           ),
                           const Divider(indent: 16, endIndent: 16),
@@ -324,19 +383,30 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                   cubit.updatePage(index);
                 },
                 indicatorColor: Colors.blue.shade100,
-                selectedIndex: currentIndex >= bottomNavPagesCount ? 0 : currentIndex,
+                selectedIndex: currentIndex >= bottomNavPagesCount
+                    ? 0
+                    : currentIndex,
                 destinations: <Widget>[
-                  const NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-                  const NavigationDestination(icon: Icon(Icons.flight), label: 'Flights'),
-                  const NavigationDestination(icon: Icon(Icons.home_work_outlined), label: 'Hotels'),
+                  const NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    label: 'Home',
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.flight),
+                    label: 'Flights',
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.home_work_outlined),
+                    label: 'Hotels',
+                  ),
                   NavigationDestination(
                     icon: favoriteCount == 0
                         ? const Icon(Icons.favorite_border_outlined)
                         : Badge(
-                      backgroundColor: Colors.blue.shade200,
-                      label: Text('$favoriteCount'),
-                      child: const Icon(Icons.favorite_border_outlined),
-                    ),
+                            backgroundColor: Colors.blue.shade200,
+                            label: Text('$favoriteCount'),
+                            child: const Icon(Icons.favorite_border_outlined),
+                          ),
                     label: 'Favorites',
                   ),
                 ],
@@ -361,7 +431,12 @@ Widget _buildDrawerSectionTitle(String title, Color color) {
     padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
     child: Text(
       title,
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color, letterSpacing: 0.5),
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: color,
+        letterSpacing: 0.5,
+      ),
     ),
   );
 }
@@ -375,11 +450,19 @@ Widget _buildDrawerListItem({
   Color? textColor,
 }) {
   final defaultIconColor = Theme.of(context).iconTheme.color ?? Colors.grey;
-  final defaultTextColor = Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87;
+  final defaultTextColor =
+      Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87;
 
   return ListTile(
     leading: Icon(icon, color: iconColor ?? defaultIconColor, size: 24),
-    title: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor ?? defaultTextColor)),
+    title: Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: textColor ?? defaultTextColor,
+      ),
+    ),
     onTap: onTap,
     splashColor: (iconColor ?? defaultIconColor).withOpacity(0.1),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
