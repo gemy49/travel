@@ -33,13 +33,10 @@ class _ChatPageState extends State<ChatPage> {
       };
 
       final response = await http.post(
-        Uri.parse('http://10.189.241.220:3000/chat'),
+        Uri.parse('http://192.168.100.10:3000/chat'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
-
-      print('Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -108,10 +105,17 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Travel Chat Assistant"),
         backgroundColor: primaryColor,
+        elevation: 2,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Travel Chat Assistant",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
+        ),
         centerTitle: true,
-        elevation: 4,
       ),
       body: SafeArea(
         child: Column(

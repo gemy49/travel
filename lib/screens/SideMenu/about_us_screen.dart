@@ -75,10 +75,23 @@ class AboutUsScreen extends StatelessWidget {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final double cardWidth = MediaQuery.of(context).size.width / 2 - 32;
+
     return Scaffold(
+      backgroundColor: Colors.white, // خلفية الصفحة بيضاء
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text("About Us", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [

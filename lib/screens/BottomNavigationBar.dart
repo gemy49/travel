@@ -16,9 +16,8 @@ import 'flights/MyFlights.dart';
 import 'hotels/MyHotels.dart';
 import 'package:FlyHigh/providers/counter_bloc.dart';
 import 'package:FlyHigh/providers/counter_state.dart';
-
-// *** إضافة الاستيراد لصفحة الشات بوت ***
-import 'package:FlyHigh/screens/chat_bot.dart';
+import 'package:FlyHigh/screens/SideMenu/profile_page.dart';
+import 'package:FlyHigh/screens/SideMenu/chat_bot.dart';
 
 class Bottomnavigationbar extends StatefulWidget {
   const Bottomnavigationbar({super.key});
@@ -240,25 +239,6 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                                         ),
                                 ),
                               ),
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: CircleAvatar(
-                                  radius: 15,
-                                  backgroundColor: Colors.white.withOpacity(
-                                    0.8,
-                                  ),
-                                  child: IconButton(
-                                    padding: EdgeInsets.zero,
-                                    icon: Icon(
-                                      Icons.edit,
-                                      size: 18,
-                                      color: Colors.blue.shade500,
-                                    ),
-                                    onPressed: pickAndUploadProfileImage,
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 15),
@@ -318,12 +298,8 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                               );
                             },
                           ),
-
                           const Divider(indent: 16, endIndent: 16),
-
                           _buildDrawerSectionTitle("App", Colors.blue.shade500),
-
-                          // تم نقل زر Chat Bot ليكون أول عنصر في قسم App
                           _buildDrawerListItem(
                             context: context,
                             icon: Icons.chat_bubble_outline,
@@ -338,7 +314,6 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                               );
                             },
                           ),
-
                           _buildDrawerListItem(
                             context: context,
                             icon: Icons.menu_book,
@@ -379,6 +354,26 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
                             },
                           ),
                           const Divider(indent: 16, endIndent: 16),
+
+                          // الزر الجديد Profile
+                          _buildDrawerListItem(
+                            context: context,
+                            icon: Icons.person_outline,
+                            title: 'Profile',
+                            onTap: () async {
+                              Navigator.pop(context);
+                              // انتظر رجوع المستخدم من صفحة البروفايل
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProfilePage(),
+                                ),
+                              );
+                              // بعد الرجوع، حدث البيانات
+                              await getUsername();
+                            },
+                          ),
+
                           _buildDrawerListItem(
                             context: context,
                             icon: Icons.logout,

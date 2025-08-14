@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../providers/counter_bloc.dart';
 import 'contact_us_screen.dart';
 
@@ -45,6 +44,19 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     var cubit = context.read<CounterBloc>();
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Privacy Policy",
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -57,59 +69,51 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 "At TravelEasy, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our flight booking application.",
               ),
               const SizedBox(height: 20),
-
               _buildSubTitle("Information We Collect"),
               const SizedBox(height: 8),
               _buildParagraph(
                 "We collect information you provide directly, such as your name, email address, and payment details when you book a flight. We also collect usage data, such as your browsing activity and preferences, to improve our services.",
               ),
               const SizedBox(height: 20),
-
               _buildSubTitle("How We Use Your Information"),
               const SizedBox(height: 8),
               _buildParagraph(
                 "Your information is used to process bookings, personalize your experience, and send you relevant offers. We do not share your personal data with third parties except as necessary to complete your booking or comply with legal requirements.",
               ),
               const SizedBox(height: 20),
-
               _buildSubTitle("Data Security"),
               const SizedBox(height: 8),
               _buildParagraph(
                 "We implement industry-standard security measures to protect your data. However, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.",
               ),
               const SizedBox(height: 30),
-
               _buildSectionTitle(Icons.description, "Terms of Service"),
               const SizedBox(height: 12),
               _buildParagraph(
                 "By using TravelEasy, you agree to these Terms of Service. These terms govern your use of our flight booking application and services.",
               ),
               const SizedBox(height: 20),
-
               _buildSubTitle("Booking and Payments"),
               const SizedBox(height: 8),
               _buildParagraph(
                 "All bookings are subject to availability and airline policies. Payments must be made in full at the time of booking. Refunds and cancellations are subject to the airline's terms and conditions.",
               ),
               const SizedBox(height: 20),
-
               _buildSubTitle("User Responsibilities"),
               const SizedBox(height: 8),
               _buildParagraph(
                 "You agree to provide accurate information when booking flights. You are responsible for complying with all applicable laws and regulations related to travel.",
               ),
               const SizedBox(height: 20),
-
               _buildSubTitle("Limitation of Liability"),
               const SizedBox(height: 8),
               _buildParagraph(
                 "TravelEasy is not liable for any delays, cancellations, or disruptions caused by airlines or other third parties. We are not responsible for any loss or damage resulting from your use of our services.",
               ),
               const SizedBox(height: 40),
-
               Center(
                 child: SizedBox(
-                  width: 320, // عرض كافي للنص ليظل في سطر واحد
+                  width: 320,
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.push(

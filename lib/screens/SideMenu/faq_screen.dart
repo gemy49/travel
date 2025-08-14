@@ -4,30 +4,30 @@ class FaqScreen extends StatelessWidget {
   const FaqScreen({Key? key}) : super(key: key);
 
   static const Color primaryColor = Color(0xFF77BEF0);
-  static const Color backgroundColor = Color(0xFFF9FAFB);
   static const Color questionColor = Colors.black87;
   static const Color answerColor = Color(0xFF57564F);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.white, // الخلفية بيضاء والـ AppBar ملون
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text("FAQ", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Frequently Asked Questions",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(height: 16),
-
+              const SizedBox(height: 8),
               _buildFaqItem(
                 question: "How do I book a flight?",
                 answer:
@@ -68,7 +68,6 @@ class FaqScreen extends StatelessWidget {
                 answer:
                     "Absolutely. We comply with data protection regulations and never share your personal information with third parties without your consent.",
               ),
-
               const SizedBox(height: 24),
             ],
           ),

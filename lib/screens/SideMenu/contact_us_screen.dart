@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../BottomNavigationBar.dart';
 
 const Color primaryColor = Color(0xFF77BEF0);
@@ -17,19 +16,87 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   final _emailController = TextEditingController();
   final _messageController = TextEditingController();
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("✅ Message sent successfully"),
-          backgroundColor: Colors.green,
+  void _showCustomSnackBar({
+    required String message,
+    required Color backgroundColor,
+    IconData? icon,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: Colors.white),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
-      );
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
-      _nameController.clear();
-      _emailController.clear();
-      _messageController.clear();
+  void _submitForm() {
+    // تحقق من أن كل الحقول ليست فارغة
+    if (_nameController.text.trim().isEmpty) {
+      _showCustomSnackBar(
+        message: "Name is required",
+        backgroundColor: Colors.redAccent,
+        icon: Icons.error,
+      );
+      return;
     }
+
+    if (_emailController.text.trim().isEmpty) {
+      _showCustomSnackBar(
+        message: "Email is required",
+        backgroundColor: Colors.redAccent,
+        icon: Icons.error,
+      );
+      return;
+    }
+
+    if (!RegExp(r'\S+@\S+\.\S+').hasMatch(_emailController.text)) {
+      _showCustomSnackBar(
+        message: "Enter a valid email",
+        backgroundColor: Colors.redAccent,
+        icon: Icons.error,
+      );
+      return;
+    }
+
+    if (_messageController.text.trim().isEmpty) {
+      _showCustomSnackBar(
+        message: "Message is required",
+        backgroundColor: Colors.redAccent,
+        icon: Icons.error,
+      );
+      return;
+    }
+
+    // لو كل الحقول صحيحة
+    _showCustomSnackBar(
+      message: "Message sent successfully",
+      backgroundColor: Colors.green,
+      icon: Icons.check_circle,
+    );
+
+    _nameController.clear();
+    _emailController.clear();
+    _messageController.clear();
+
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const Bottomnavigationbar()),
@@ -40,9 +107,23 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Contact Us",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -59,30 +140,23 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Contact Us",
+                    "Get in Touch",
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 24),
                   Text(
-                    "Get in Touch",
+                    "Name",
                     style: TextStyle(
-                      fontSize: 18,
                       color: primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("Name", style: TextStyle(color: primaryColor)),
                   ),
                   const SizedBox(height: 6),
                   TextFormField(
@@ -91,18 +165,14 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                       hintText: "Your Name",
                       border: OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Name is required';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
-
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("Email", style: TextStyle(color: primaryColor)),
+                  Text(
+                    "Email",
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   TextFormField(
@@ -112,49 +182,35 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Email is required';
-                      }
-                      if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-                        return 'Enter a valid email';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
-
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Message",
-                      style: TextStyle(color: primaryColor),
+                  Text(
+                    "Message",
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _messageController,
-                    maxLines: 4,
+                    maxLines: 5,
                     decoration: const InputDecoration(
                       hintText: "Your Message",
                       border: OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Message is required';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 24),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
                       child: const Text(
                         "Submit",
