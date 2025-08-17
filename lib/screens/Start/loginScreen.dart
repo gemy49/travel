@@ -66,13 +66,55 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setString("name", userData['user']['name']);
         await prefs.setString("phone", userData['user']['phone']);
 
-        _showSnackBarMessage(
-          "Welcome ${userData['user']['name']}",
-          Colors.green,
-          Icons.check_circle_outline,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            content: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E2C),
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6C63FF), Color(0xFF77BEF0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.star_rounded, color: Colors.white, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Welcome ${userData['user']['name']}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
         );
 
-        Navigator.pushNamedAndRemoveUntil(context, '/BottomNavigationBar', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/BottomNavigationBar',
+          (route) => false,
+        );
       } else {
         _showSnackBarMessage(
           "Incorrect email or password",

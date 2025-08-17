@@ -19,8 +19,14 @@ class HotelDetailsScreen extends StatefulWidget {
   final int? hotelId; // Add hotelId parameter
 
   const HotelDetailsScreen({super.key, this.hotel, this.hotelId})
-      : assert(hotel != null || hotelId != null, 'Either hotel or hotelId must be provided'),
-        assert(!(hotel != null && hotelId != null), 'Cannot provide both hotel and hotelId');
+    : assert(
+        hotel != null || hotelId != null,
+        'Either hotel or hotelId must be provided',
+      ),
+      assert(
+        !(hotel != null && hotelId != null),
+        'Cannot provide both hotel and hotelId',
+      );
 
   @override
   State<HotelDetailsScreen> createState() => _HotelDetailsScreenState();
@@ -74,10 +80,12 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       }
 
       // Find the hotel by ID
-      final Hotel? foundHotel =
-      hotelProvider.hotels.firstWhere((hotel) => hotel.id == id, ); // Provide a default/fallback
+      final Hotel? foundHotel = hotelProvider.hotels.firstWhere(
+        (hotel) => hotel.id == id,
+      ); // Provide a default/fallback
 
-      if (foundHotel != null && foundHotel.id != 0) { // Assuming ID 0 means not found or empty
+      if (foundHotel != null && foundHotel.id != 0) {
+        // Assuming ID 0 means not found or empty
         setState(() {
           _hotel = foundHotel;
           _isLoading = false;
@@ -118,7 +126,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     if (_hotel == null) return 0.0;
 
     // --- Calculate number of nights ---
-    int numberOfNights = 1; // Default to 1 night if dates are not selected or invalid
+    int numberOfNights =
+        1; // Default to 1 night if dates are not selected or invalid
     if (_checkInDate != null && _checkOutDate != null) {
       // Calculate the difference in days
       numberOfNights = _checkOutDate!.difference(_checkInDate!).inDays;
@@ -131,9 +140,10 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
 
     double total = 0.0;
     _selectedRoomQuantities.forEach((roomType, quantity) {
-      if (quantity > 0) { // Only calculate for rooms with quantity > 0
+      if (quantity > 0) {
+        // Only calculate for rooms with quantity > 0
         final room = _hotel!.availableRooms.firstWhere(
-              (r) => r.type == roomType,
+          (r) => r.type == roomType,
           orElse: () => availableRoom(type: roomType, price: 0, quantity: 0),
         );
         // Multiply by price, quantity, and number of nights
@@ -149,7 +159,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     _selectedRoomQuantities.forEach((roomType, quantity) {
       if (quantity > 0) {
         final room = _hotel!.availableRooms.firstWhere(
-              (r) => r.type == roomType,
+          (r) => r.type == roomType,
           orElse: () => availableRoom(type: roomType, price: 0, quantity: 0),
         );
         selectedData.add({
@@ -175,7 +185,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       return;
     }
     final double totalPrice = _calculateTotalPrice();
-    final List<Map<String, dynamic>> selectedRoomsData = _getSelectedRoomsData();
+    final List<Map<String, dynamic>> selectedRoomsData =
+        _getSelectedRoomsData();
 
     if (selectedRoomsData.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -205,7 +216,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
 
   Future<void> openMap(String lat, String lng) async {
     final Uri googleMapsAppUrl = Uri.parse("comgooglemaps://?q=$lat,$lng");
-    final Uri googleMapsWebUrl = Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng");
+    final Uri googleMapsWebUrl = Uri.parse(
+      "https://www.google.com/maps/search/?api=1&query=$lat,$lng",
+    );
 
     // حاول يفتح تطبيق Google Maps أولًا
     if (await canLaunchUrl(googleMapsAppUrl)) {
@@ -215,20 +228,25 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     else {
       await launchUrl(googleMapsWebUrl, mode: LaunchMode.externalApplication);
     }
-  }// Function to select check-in date
+  } // Function to select check-in date
+
   Future<void> _selectCheckInDate(BuildContext context) async {
     final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _checkInDate ?? today, // Default to today or previously selected
+      initialDate:
+          _checkInDate ?? today, // Default to today or previously selected
       firstDate: today, // Cannot select a past date
-      lastDate: DateTime(today.year + 1), // Allow selection up to a year in the future
+      lastDate: DateTime(
+        today.year + 1,
+      ), // Allow selection up to a year in the future
     );
     if (picked != null && picked != _checkInDate) {
       setState(() {
         _checkInDate = picked;
         // Format and display the selected date
-        _checkInDateController.text = "${picked.day}/${picked.month}/${picked.year}";
+        _checkInDateController.text =
+            "${picked.day}/${picked.month}/${picked.year}";
 
         // If check-out date is before the new check-in date, reset check-out
         if (_checkOutDate != null && _checkOutDate!.isBefore(_checkInDate!)) {
@@ -239,7 +257,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     }
   }
 
-// Function to select check-out date
+  // Function to select check-out date
   Future<void> _selectCheckOutDate(BuildContext context) async {
     // Ensure check-in date is selected first
     if (_checkInDate == null) {
@@ -254,18 +272,28 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
 
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _checkOutDate ?? _checkInDate!.add(const Duration(days: 1)), // Default to day after check-in
-      firstDate: _checkInDate!.add(const Duration(days: 1)), // Must be after check-in
-      lastDate: _checkInDate!.add(const Duration(days: 365)), // Allow up to a year stay
+      initialDate:
+          _checkOutDate ??
+          _checkInDate!.add(
+            const Duration(days: 1),
+          ), // Default to day after check-in
+      firstDate: _checkInDate!.add(
+        const Duration(days: 1),
+      ), // Must be after check-in
+      lastDate: _checkInDate!.add(
+        const Duration(days: 365),
+      ), // Allow up to a year stay
     );
     if (picked != null && picked != _checkOutDate) {
       setState(() {
         _checkOutDate = picked;
         // Format and display the selected date
-        _checkOutDateController.text = "${picked.day}/${picked.month}/${picked.year}";
+        _checkOutDateController.text =
+            "${picked.day}/${picked.month}/${picked.year}";
       });
     }
   }
+
   void dispose() {
     // Dispose of room selection related resources if any (as before)
 
@@ -275,20 +303,23 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
 
     super.dispose();
   }
+
   // --- UI Building (mostly as before, but using _hotel) ---
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = Colors.blue.shade500;
 
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_errorMessage.isNotEmpty || _hotel == null) {
       return Scaffold(
-        body: Center(child: Text(_errorMessage.isEmpty ? 'Hotel data is missing.' : _errorMessage)),
+        body: Center(
+          child: Text(
+            _errorMessage.isEmpty ? 'Hotel data is missing.' : _errorMessage,
+          ),
+        ),
       );
     }
 
@@ -454,8 +485,13 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                   const SizedBox(height: 12),
                   // Display available rooms with selection UI
                   ...hotel.availableRooms.map((room) {
-                    final int selectedQuantity = _selectedRoomQuantities[room.type] ?? 0;
-                    return _buildRoomTypeCard(room, selectedQuantity, primaryColor);
+                    final int selectedQuantity =
+                        _selectedRoomQuantities[room.type] ?? 0;
+                    return _buildRoomTypeCard(
+                      room,
+                      selectedQuantity,
+                      primaryColor,
+                    );
                   }).toList(),
                   const SizedBox(height: 10),
                   // Display Total Price
@@ -464,7 +500,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: primaryColor, // Use the primary color defined earlier
+                      color:
+                          primaryColor, // Use the primary color defined earlier
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -473,7 +510,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       Expanded(
                         child: TextField(
                           controller: _checkInDateController,
-                          readOnly: true, // Make it read-only to force using the picker
+                          readOnly:
+                              true, // Make it read-only to force using the picker
                           decoration: InputDecoration(
                             labelText: "Check-in Date",
                             prefixIcon: const Icon(Icons.calendar_today),
@@ -481,50 +519,72 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: primaryColor, width: 2.0),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2.0,
+                              ),
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: primaryColor, width: 2.0),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2.0,
+                              ),
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
-                          onTap: () => _selectCheckInDate(context), // Open date picker on tap
+                          onTap: () => _selectCheckInDate(
+                            context,
+                          ), // Open date picker on tap
                         ),
                       ),
                       const SizedBox(width: 15),
                       Expanded(
                         child: TextField(
                           controller: _checkOutDateController,
-                          readOnly: true, // Make it read-only to force using the picker
+                          readOnly:
+                              true, // Make it read-only to force using the picker
                           decoration: InputDecoration(
                             labelText: "Check-out Date",
-                            prefixIcon: const Icon(Icons.calendar_today_outlined),
+                            prefixIcon: const Icon(
+                              Icons.calendar_today_outlined,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: primaryColor, width: 2.0),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2.0,
+                              ),
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: primaryColor, width: 2.0),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2.0,
+                              ),
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
-                          onTap: () => _selectCheckOutDate(context), // Open date picker on tap
+                          onTap: () => _selectCheckOutDate(
+                            context,
+                          ), // Open date picker on tap
                         ),
                       ),
                     ],
                   ),
                   if (_checkInDate != null && _checkOutDate != null)
-                    Builder( // Use Builder to access context if needed inside the logic
+                    Builder(
+                      // Use Builder to access context if needed inside the logic
                       builder: (context) {
-                        final int nights = _checkOutDate!.difference(_checkInDate!).inDays;
+                        final int nights = _checkOutDate!
+                            .difference(_checkInDate!)
+                            .inDays;
                         if (nights > 0) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -585,70 +645,13 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: hotel.amenities
-                        .map((amenity) => _buildAmenityChip(amenity, primaryColor))
+                        .map(
+                          (amenity) => _buildAmenityChip(amenity, primaryColor),
+                        )
                         .toList(),
                   ),
                   const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Contact',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        // Phone Number
-                        if (hotel.contact['phone'] != null &&
-                            hotel.contact['phone'].toString().isNotEmpty)
-                          _buildContactItem(
-                            icon: Icons.phone,
-                            label: 'Phone',
-                            value: hotel.contact['phone'].toString(),
-                            primaryColor: primaryColor,
-                            onTap: () {
-                              // Add phone call functionality here if needed
-                              launch('tel:${hotel.contact['phone']}');
-                              print("Phone tapped: ${hotel.contact['phone']}");
-                            },
-                          ),
-                        const SizedBox(height: 12),
-                        // Email Address
-                        if (hotel.contact['email'] != null &&
-                            hotel.contact['email'].toString().isNotEmpty)
-                          _buildContactItem(
-                            icon: Icons.email,
-                            label: 'Email',
-                            value: hotel.contact['email'].toString(),
-                            primaryColor: primaryColor,
-                            onTap: () {
-                              // Add email functionality here if needed
-                               launch('mailto:${hotel.contact['email']}');
-                              print("Email tapped: ${hotel.contact['email']}");
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 20),
-
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -763,7 +766,11 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 
   // --- Helper Widgets (as before, using local variables) ---
-  Widget _buildRoomTypeCard(dynamic room, int selectedQuantity, Color primaryColor) {
+  Widget _buildRoomTypeCard(
+    dynamic room,
+    int selectedQuantity,
+    Color primaryColor,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15), // Space between room cards
       decoration: BoxDecoration(
@@ -798,9 +805,13 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                 ),
                 // Display available quantity
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200, // Light background for quantity
+                    color:
+                        Colors.grey.shade200, // Light background for quantity
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -838,12 +849,14 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                     IconButton(
                       icon: Icon(
                         Icons.remove_circle_outline,
-                        color: selectedQuantity > 0 ? primaryColor : Colors.grey,
+                        color: selectedQuantity > 0
+                            ? primaryColor
+                            : Colors.grey,
                       ),
                       onPressed: selectedQuantity > 0
                           ? () {
-                        _updateRoomQuantity(room.type, -1);
-                      }
+                              _updateRoomQuantity(room.type, -1);
+                            }
                           : null, // Disable if quantity is 0
                     ),
                     // Quantity Display
@@ -868,8 +881,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       ),
                       onPressed: selectedQuantity < room.quantity
                           ? () {
-                        _updateRoomQuantity(room.type, 1);
-                      }
+                              _updateRoomQuantity(room.type, 1);
+                            }
                           : null, // Disable if max quantity reached
                     ),
                   ],
@@ -893,11 +906,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.check_circle,
-            color: Colors.blue,
-            size: 16,
-          ),
+          const Icon(Icons.check_circle, color: Colors.blue, size: 16),
           const SizedBox(width: 4),
           Text(
             amenity,
@@ -930,29 +939,19 @@ Widget _buildContactItem({
           const SizedBox(width: 12),
           Text(
             '$label:',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.black87),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           // Optional: Add an arrow icon to indicate it's tappable
           if (onTap != null)
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
         ],
       ),
     ),

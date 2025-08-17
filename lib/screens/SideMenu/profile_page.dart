@@ -24,19 +24,42 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    // initialize controllers empty by default
+    nameController = TextEditingController();
+    phoneController = TextEditingController();
+    emailController = TextEditingController();
     _loadUserData();
   }
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    final userData = prefs.getString('currentUser');
+
     token = prefs.getString('token');
-    if (userData != null) {
+    final name = prefs.getString('name');
+    final email = prefs.getString('email');
+    final phone = prefs.getString('phone');
+    final id = prefs.getInt('userId');
+    final profilePhoto = prefs.getString('profilePhoto');
+
+    if (name != null && email != null) {
       setState(() {
-        user = json.decode(userData);
-        nameController = TextEditingController(text: user!['name']);
-        phoneController = TextEditingController(text: user!['phone']);
-        emailController = TextEditingController(text: user!['email']);
+        user = {
+          'id': id,
+          'name': name,
+          'email': email,
+          'phone': phone,
+          'profilePhoto': profilePhoto,
+        };
+
+        nameController.text = name;
+        phoneController.text = phone ?? '';
+        emailController.text = email;
+      });
+      debugPrint("✅ User data loaded: $user");
+    } else {
+      debugPrint("⚠️ No user is logged in");
+      setState(() {
+        user = null;
       });
     }
   }
@@ -54,6 +77,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _uploadImage(File image) async {
+    if (user == null) return;
     setState(() => isUploading = true);
 
     final request = http.MultipartRequest(
@@ -87,7 +111,6 @@ class _ProfilePageState extends State<ProfilePage> {
         });
 
         final prefs = await SharedPreferences.getInstance();
-        prefs.setString('currentUser', json.encode(user));
         prefs.setString('profilePhoto', imageUrl);
 
         _showCustomSnackBar(
@@ -101,6 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _updateProfile() async {
+    if (user == null) return;
     if (!_formKey.currentState!.validate()) return;
 
     final response = await http.put(
@@ -122,7 +146,6 @@ class _ProfilePageState extends State<ProfilePage> {
       });
 
       final prefs = await SharedPreferences.getInstance();
-      prefs.setString('currentUser', json.encode(user));
       prefs.setString('name', nameController.text);
       prefs.setString('phone', phoneController.text);
 
@@ -290,7 +313,14 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     if (user == null) {
-      return Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(
+          child: Text(
+            "No user is logged in",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
     }
     return Scaffold(
       resizeToAvoidBottomInset: true,
