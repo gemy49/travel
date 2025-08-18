@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:FlyHigh/screens/SideMenu/chat_bot.dart';
 import 'package:flutter/material.dart';
 // Assuming HotelRoom is defined within hotel.dart or imported separately
 // import 'package:FlyHigh/models/hotel_room.dart'; // If separate
@@ -41,6 +42,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   DateTime? _checkOutDate;
   late TextEditingController _checkInDateController;
   late TextEditingController _checkOutDateController;
+  final Color primaryColor = Colors.blue.shade500;
+
   // State for room selection (as before)
   Map<String, int> _selectedRoomQuantities = {};
 
@@ -233,6 +236,24 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   Future<void> _selectCheckInDate(BuildContext context) async {
     final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: primaryColor, // لون الهيدر والأزرار (OK, Cancel)
+              onPrimary: Colors.white, // لون النص في الهيدر
+              onSurface: Colors.black, // لون النصوص داخل الـ Calendar
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: primaryColor, // لون أزرار OK و CANCEL
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+
       context: context,
       initialDate:
           _checkInDate ?? today, // Default to today or previously selected
@@ -271,6 +292,23 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     }
 
     final DateTime? picked = await showDatePicker(
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: primaryColor, // لون الهيدر والأزرار (OK, Cancel)
+              onPrimary: Colors.white, // لون النص في الهيدر
+              onSurface: Colors.black, // لون النصوص داخل الـ Calendar
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: primaryColor, // لون أزرار OK و CANCEL
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
       context: context,
       initialDate:
           _checkOutDate ??
@@ -307,7 +345,6 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   // --- UI Building (mostly as before, but using _hotel) ---
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = Colors.blue.shade500;
 
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -514,6 +551,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                               true, // Make it read-only to force using the picker
                           decoration: InputDecoration(
                             labelText: "Check-in Date",
+                            labelStyle: TextStyle(color: primaryColor),
                             prefixIcon: const Icon(Icons.calendar_today),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10.0),
@@ -548,6 +586,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                               true, // Make it read-only to force using the picker
                           decoration: InputDecoration(
                             labelText: "Check-out Date",
+                            labelStyle: TextStyle(color: primaryColor),
                             prefixIcon: const Icon(
                               Icons.calendar_today_outlined,
                             ),
@@ -787,7 +826,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -804,27 +843,10 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                   ),
                 ),
                 // Display available quantity
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        Colors.grey.shade200, // Light background for quantity
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Available: ${room.quantity}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 5),
             // Price per Night
             Text(
               '\$${room.price.toStringAsFixed(2)} per night',
@@ -834,7 +856,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 5),
             // Quantity Selector
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -906,12 +928,12 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle, color: Colors.blue, size: 16),
+          const Icon(Icons.check_circle, color: Colors.black45, size: 16),
           const SizedBox(width: 4),
           Text(
             amenity,
             style: const TextStyle(
-              color: Colors.blue,
+              color: Colors.black,
               fontWeight: FontWeight.w500,
             ),
           ),
