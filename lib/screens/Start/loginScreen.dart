@@ -65,6 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setString("email", userData['user']['email']);
         await prefs.setString("name", userData['user']['name']);
         await prefs.setString("phone", userData['user']['phone']);
+        await prefs.setString("profilePhoto",userData['user']['profilePhoto']);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

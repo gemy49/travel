@@ -374,7 +374,7 @@ class _MyFlightsScreenState extends State<MyFlightsScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  "\$${(booking.price * booking.adults) + (booking.price * (booking.children * .5))}",
+                  "\$${booking.totalPrice.toStringAsFixed(2) }",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

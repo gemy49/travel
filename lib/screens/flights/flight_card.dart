@@ -37,11 +37,6 @@ class FlightCard extends StatelessWidget {
           ),
         ],
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          Navigator.pushNamed(context, '/flight-details', arguments: flight);
-        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -139,7 +134,7 @@ class FlightCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }
+

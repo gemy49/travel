@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:FlyHigh/models/flight.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -35,7 +36,7 @@ class _ChatPageState extends State<ChatPage> {
       };
 
       final response = await http.post(
-        Uri.parse('http://192.168.100.10:3000/chat'),
+        Uri.parse('http://192.168.1.100:3000/chat'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
@@ -183,7 +184,7 @@ class _ChatPageState extends State<ChatPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => FlightDetailsScreen(flight: f),
+                        builder: (context) => FlightDetailsScreen(chat: f ),
                       ),
                     );
                   },
@@ -209,7 +210,7 @@ class _ChatPageState extends State<ChatPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => HotelDetailsScreen(hotel: h),
+                        builder: (context) => HotelDetailsScreen(chat: h),
                       ),
                     );
                   },

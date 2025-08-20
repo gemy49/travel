@@ -5,12 +5,11 @@ import '../../models/Flights_booking_data.dart';
 import '../../providers/place_provider.dart';
 import '../../providers/weather_provider.dart';
 
-// If FlightBookingData is defined here (not recommended), remove it and use the import above.
-
 class FlightDetailsScreen extends StatefulWidget {
-  final Flight flight;
+  final Flight? flight;
+  final Map<String, dynamic>? chat;
 
-  const FlightDetailsScreen({Key? key, required this.flight}) : super(key: key);
+  const FlightDetailsScreen({Key? key, this.flight, this.chat}) : super(key: key);
 
   @override
   State<FlightDetailsScreen> createState() => _FlightDetailsScreenState();
@@ -18,30 +17,78 @@ class FlightDetailsScreen extends StatefulWidget {
 
 class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
   late Future<void> _placesFuture;
+  // Local Flight object to hold data from either widget.flight or widget.chat
+  Flight? _localFlight;
 
   // --- Update state variables ---
-  int _numberOfAdults = 1; // Default to 1 adult
-  int _numberOfChildren = 0; // Default to 0 children
+  int _numberOfAdults = 1;
+  int _numberOfChildren = 0;
 
   @override
   void initState() {
     super.initState();
-    _placesFuture = Provider.of<PlaceProvider>(context, listen: false)
-        .fetchPlaces(city: widget.flight.to);
-    Provider.of<WeatherProvider>(context, listen: false)
-        .fetchWeather(city: widget.flight.to);
+
+    // Determine the flight data source
+    if (widget.flight != null) {
+      _localFlight = widget.flight;
+    } else if (widget.chat != null) {
+      // Attempt to create a Flight object from chat data
+      // You'll need to adjust these keys based on the actual structure of your chat['flights'] item
+      try {
+        _localFlight = Flight(
+          // Assuming your Flight constructor takes named parameters like this:
+          // You might need to parse strings to appropriate types (e.g., int.parse, double.parse)
+          id: int.tryParse(widget.chat!['id']?.toString() ?? '') ?? 0,
+          from: widget.chat!['from']?.toString() ?? 'Unknown Origin',
+          to: widget.chat!['to']?.toString() ?? 'Unknown Destination',
+          date: widget.chat!['date']?.toString() ?? 'Unknown Date',
+          departureTime: widget.chat!['departureTime']?.toString() ?? 'Unknown Departure Time',
+          arrivalTime: widget.chat!['arrivalTime']?.toString() ?? 'Unknown Arrival Time',
+          price: widget.chat!['price'] is num ? widget.chat!['price'].toDouble() : 0.0, // Handle potential int/double
+          airline: widget.chat!['airline']?.toString() ?? 'Unknown Airline',
+          // Add other fields if necessary, providing defaults
+        );
+        // Debug print
+        print("Flight data extracted from chat: ${_localFlight!.to}");
+      } catch (e) {
+        // Handle potential errors in creating Flight object from chat data
+        print("Error creating Flight from chat data: $e");
+        _localFlight = null; // Indicate failure to create local flight data
+      }
+    }
+
+    // Fetch data only if we have flight information
+    if (_localFlight != null) {
+      _placesFuture = Provider.of<PlaceProvider>(context, listen: false)
+          .fetchPlaces(city: _localFlight!.to);
+      Provider.of<WeatherProvider>(context, listen: false)
+          .fetchWeather(city: _localFlight!.to);
+    } else {
+      // Initialize _placesFuture to a completed future to avoid errors if _localFlight is null
+      _placesFuture = Future.value();
+      // Show an error message or handle the null case in build()
+      print("Flight data is missing (both flight and chat).");
+    }
   }
 
   // --- Function to calculate total price ---
   double _calculateTotalPrice() {
-    double adultCost = widget.flight.price * _numberOfAdults;
-    double childCost = (widget.flight.price * 0.5) * _numberOfChildren; // Half price for children
+    // Use _localFlight
+    if (_localFlight == null) return 0.0;
+    double adultCost = _localFlight!.price * _numberOfAdults;
+    double childCost = (_localFlight!.price * 0.5) * _numberOfChildren;
     return adultCost + childCost;
   }
 
   // --- Function to handle booking - updated to pass data ---
   void _handleBooking(BuildContext context) {
-    // Ensure at least one passenger is selected
+    // Use _localFlight
+    if (_localFlight == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Flight details are missing."), backgroundColor: Colors.red),
+      );
+      return;
+    }
     if (_numberOfAdults + _numberOfChildren <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -52,25 +99,34 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
       return;
     }
 
-    // Create an object to hold flight and passenger count
+    // Pass _localFlight
     final bookingData = FlightBookingData(
-      flight: widget.flight,
+      flight: _localFlight!,
       numberOfAdults: _numberOfAdults,
       numberOfChildren: _numberOfChildren,
     );
-    // Navigate to the payment screen, passing the booking data
     Navigator.pushNamed(context, '/Flight_Payment', arguments: bookingData);
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final Color primaryColor = Colors.blue.shade500; // Define primary color
-    // --- Calculate total price ---
-    final double totalPrice = _calculateTotalPrice(); // Use the new function
+    final Color primaryColor = Colors.blue.shade500;
+
+    // Check if we have valid flight data to display
+    if (_localFlight == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Flight Details')),
+        body: const Center(
+          child: Text('Flight information is not available.'),
+        ),
+      );
+    }
+
+    final double totalPrice = _calculateTotalPrice();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFf5f5f5), // Consistent background
+      backgroundColor: const Color(0xFFf5f5f5),
       body: Container(
         height: double.infinity,
         child: SafeArea(
@@ -83,7 +139,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // --- Flight Details Card with Book Button ---
                   Card(
                     elevation: 4,
                     shape: RoundedRectangleBorder(
@@ -93,7 +148,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Flight Details Title
                           Text(
                             "Flight Details",
                             style: TextStyle(
@@ -102,24 +156,21 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                                 color: primaryColor),
                           ),
                           const SizedBox(height: 12),
-                          // Flight Info Rows - Updated to match data fields
+                          // Use _localFlight for displaying details
                           _infoRow(Icons.flight_takeoff, 'From',
-                              widget.flight.from, primaryColor),
-                          _infoRow(Icons.flight_land, 'To', widget.flight.to, primaryColor),
-                          _infoRow(Icons.date_range, 'Departure Date', widget.flight.date, primaryColor),
-                          _infoRow(Icons.access_time, 'Departure Time', widget.flight.departureTime, primaryColor),
-                          _infoRow(Icons.access_time, 'Arrival Time', widget.flight.arrivalTime, primaryColor),
-                          _infoRow(Icons.monetization_on, 'Base Price (Adult)', '\$${widget.flight.price}', primaryColor), // Clarify adult price
-                          _infoRow(Icons.monetization_on, 'Base Price (Child)', '\$${(widget.flight.price * 0.5).toStringAsFixed(2)}', primaryColor), // Show child price
-                          _infoRow(Icons.airlines, 'Airline', widget.flight.airline, primaryColor),
-                          // Removed transit section as it's not in the provided data sample
+                              _localFlight!.from, primaryColor),
+                          _infoRow(Icons.flight_land, 'To', _localFlight!.to, primaryColor),
+                          _infoRow(Icons.date_range, 'Departure Date', _localFlight!.date, primaryColor),
+                          _infoRow(Icons.access_time, 'Departure Time', _localFlight!.departureTime, primaryColor),
+                          _infoRow(Icons.access_time, 'Arrival Time', _localFlight!.arrivalTime, primaryColor),
+                          _infoRow(Icons.monetization_on, 'Base Price (Adult)', '\$${_localFlight!.price.toStringAsFixed(2)}', primaryColor),
+                          _infoRow(Icons.monetization_on, 'Base Price (Child)', '\$${(_localFlight!.price * 0.5).toStringAsFixed(2)}', primaryColor),
+                          _infoRow(Icons.airlines, 'Airline', _localFlight!.airline, primaryColor),
 
                           const SizedBox(height: 15),
-                          // --- Passenger Selection (Adults and Children) ---
-                          _buildPassengerSelection(primaryColor), // Add the new UI
+                          _buildPassengerSelection(primaryColor),
 
                           const SizedBox(height: 10),
-                          // --- Updated Total Price Display ---
                           Container(
                             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
                             decoration: BoxDecoration(
@@ -138,7 +189,7 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '\$${totalPrice.toStringAsFixed(2)}', // Display calculated total price
+                                  '\$${totalPrice.toStringAsFixed(2)}',
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -150,7 +201,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                           ),
 
                           const SizedBox(height: 15),
-                          // --- Book Now Button ---
                           SizedBox(
                             width: double.infinity,
                             height: 50,
@@ -175,7 +225,7 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                                 ],
                               ),
                               child: ElevatedButton(
-                                onPressed: () => _handleBooking(context), // Call updated handler
+                                onPressed: () => _handleBooking(context),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   shadowColor: Colors.transparent,
@@ -202,7 +252,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                   const SizedBox(height: 20),
 
                   // --- Weather Section ---
-                  // ... (rest of the Weather Section code remains largely the same, just update variable names if needed) ...
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -219,7 +268,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                     ),
                     child: Column(
                       children: [
-                        // Weather Title Row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -238,7 +286,8 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                             ),
                           ],
                         ),
-                        Text("in (${widget.flight.to})",
+                        // Use _localFlight.to for weather title
+                        Text("in (${_localFlight!.to})",
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -246,12 +295,10 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                             softWrap: true,
                             textAlign: TextAlign.center),
                         const SizedBox(height: 15),
-                        // Weather Forecast
                         Consumer<WeatherProvider>(
                           builder: (context, weatherProvider, _) {
                             if (weatherProvider.isLoading) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
+                              return const Center(child: CircularProgressIndicator());
                             }
                             final forecastDays =
                                 weatherProvider.weather?.forecast.forecastday;
@@ -264,11 +311,10 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                               child: Row(
                                 children: forecastDays.map((day) {
                                   return Container(
-                                    width: 180, // Slightly reduced width
+                                    width: 180,
                                     margin: const EdgeInsets.symmetric(
                                         horizontal: 8),
                                     child: Card(
-                                      // Use primary color for card
                                       color: primaryColor.withOpacity(0.3),
                                       shape: RoundedRectangleBorder(
                                           borderRadius:
@@ -326,7 +372,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                   const SizedBox(height: 20),
 
                   // --- Famous Places Section ---
-                  // ... (rest of the Famous Places Section code remains largely the same) ...
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -343,7 +388,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                     ),
                     child: Column(
                       children: [
-                        // Places Title Row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -359,20 +403,20 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                           ],
                         ),
                         const SizedBox(height: 15),
-                        // Places List
                         FutureBuilder(
-                          future: _placesFuture,
+                          future: _placesFuture, // This future is set based on _localFlight
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
+                              return const Center(child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              print("Error fetching places: ${snapshot.error}");
+                              return Center(child: Text("Error loading places: ${snapshot.error}"));
                             } else {
-                              final places =
-                                  Provider.of<PlaceProvider>(context).places;
+                              // Access places directly from provider, as FutureBuilder is mainly waiting for the future completion now
+                              final places = Provider.of<PlaceProvider>(context, listen: false).places;
                               if (places.isEmpty) {
-                                return const Center(
-                                    child: Text("No places found"));
+                                return const Center(child: Text("No places found"));
                               }
                               return ListView.builder(
                                 physics: const NeverScrollableScrollPhysics(),
@@ -399,8 +443,15 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                                             child: Image.asset(
                                               "assets/places/${place.image}",
                                               width: double.infinity,
-                                              height: 180, // Slightly reduced height
+                                              height: 180,
                                               fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return Container(
+                                                  height: 180,
+                                                  color: Colors.grey[300],
+                                                  child: const Icon(Icons.broken_image, color: Colors.grey),
+                                                );
+                                              },
                                             ),
                                           ),
                                           Padding(
@@ -438,6 +489,7 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
 
   // --- Add the passenger selection UI builder method ---
   Widget _buildPassengerSelection(Color primaryColor) {
+    // Implementation remains the same
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -450,41 +502,30 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        // Adults Selector
         _buildPassengerTypeSelector(
           label: 'Adults',
           count: _numberOfAdults,
           onIncrement: () {
             setState(() {
-              // Optional: Set a maximum limit
-              // if (_numberOfAdults + _numberOfChildren < 10) {
               _numberOfAdults++;
-              // }
             });
           },
           onDecrement: () {
             setState(() {
-              if (_numberOfAdults > 0) { // Allow 0 adults if children are selected?
-                // Ensure at least one passenger total?
-                // if (_numberOfAdults > 1 || _numberOfChildren > 0) {
+              if (_numberOfAdults > 0) {
                 _numberOfAdults--;
-                // }
               }
             });
           },
           primaryColor: primaryColor,
         ),
         const SizedBox(height: 8),
-        // Children Selector
         _buildPassengerTypeSelector(
           label: 'Children',
           count: _numberOfChildren,
           onIncrement: () {
             setState(() {
-              // Optional: Set a maximum limit
-              // if (_numberOfAdults + _numberOfChildren < 10) {
               _numberOfChildren++;
-              // }
             });
           },
           onDecrement: () {
@@ -508,20 +549,19 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
     required VoidCallback onDecrement,
     required Color primaryColor,
   }) {
+    // Implementation remains the same
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(fontSize: 16)),
         Row(
           children: [
-            // Minus Button
             IconButton(
               icon: Icon(Icons.remove_circle_outline, color: primaryColor),
               onPressed: onDecrement,
             ),
-            // Number Display
             Container(
-              width: 40, // Fixed width for consistent display
+              width: 40,
               alignment: Alignment.center,
               child: Text(
                 '$count',
@@ -531,7 +571,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
                 ),
               ),
             ),
-            // Plus Button
             IconButton(
               icon: Icon(Icons.add_circle_outline, color: primaryColor),
               onPressed: onIncrement,
@@ -542,9 +581,9 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
     );
   }
 
-
-  // Updated _infoRow to accept primaryColor (remains unchanged)
+  // Updated _infoRow to accept primaryColor
   Widget _infoRow(IconData icon, String label, String value, Color primaryColor) {
+    // Implementation remains the same
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(

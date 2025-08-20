@@ -96,7 +96,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       final updateRes = await http.put(
         Uri.parse(
-          "http://192.168.100.10:3000/api/users/${user!['id']}/profile",
+          "http://192.168.1.100:3000/api/users/${user!['id']}/profile",
         ),
         headers: {
           'Authorization': 'Bearer $token',
@@ -128,7 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!_formKey.currentState!.validate()) return;
 
     final response = await http.put(
-      Uri.parse("http://192.168.100.10:3000/api/users/${user!['id']}"),
+      Uri.parse("http://192.168.1.100:3000/api/users/${user!['id']}"),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -168,7 +168,8 @@ class _ProfilePageState extends State<ProfilePage> {
     required String message,
     required Color backgroundColor,
     required IconData icon,
-  }) {
+  })
+  {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -375,9 +376,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: CircleAvatar(
                           radius: 70,
                           backgroundColor: Colors.grey[200],
-                          backgroundImage: user!['profilePhoto'] != null
+                          backgroundImage: user!['profilePhoto'] != ""
                               ? NetworkImage(user!['profilePhoto'])
-                              : null,
+                              : AssetImage('assets/profile.png',),
                           child: user!['profilePhoto'] == null
                               ? Icon(
                                   Icons.person,

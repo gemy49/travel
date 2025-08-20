@@ -7,6 +7,7 @@ class Booking {
   final String departureTime;
   final String arrivalTime;
   final double price;
+  final double totalPrice;
   final String airline;
   final Map<String, dynamic>? transit; // لو فيه ترانزيت
   final int adults;
@@ -21,6 +22,7 @@ class Booking {
     required this.departureTime,
     required this.arrivalTime,
     required this.price,
+    required this.totalPrice,
     required this.airline,
     this.transit,
     required this.adults,
@@ -36,9 +38,8 @@ class Booking {
       date: json["date"] ?? "",
       departureTime: json["departureTime"] ?? "",
       arrivalTime: json["arrivalTime"] ?? "",
-      price: (json["price"] != null)
-          ? double.tryParse(json["price"].toString()) ?? 0.0
-          : 0.0,
+      price: (json["price"] != null)? double.tryParse(json["price"].toString()) ?? 0.0 : 0.0,
+      totalPrice: (json["totalPrice"] != null)? double.tryParse(json["totalPrice"].toString()) ?? 0.0 : 0.0,
       airline: json["airline"] ?? "",
       transit: json["transit"], // ممكن يكون null
       adults: json["adults"] ?? 0,
@@ -56,6 +57,7 @@ class Booking {
       "departureTime": departureTime,
       "arrivalTime": arrivalTime,
       "price": price,
+      "totalPrice": totalPrice,
       "airline": airline,
       "transit": transit,
       "adults": adults,

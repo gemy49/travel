@@ -336,7 +336,7 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                               "date": flight.date,
                               "departureTime": flight.departureTime,
                               "arrivalTime": flight.arrivalTime,
-                              "price": totalPrice,
+                              "price": flight.price,
                               "airline": flight.airline,
                               "adults": numberOfAdults,
                               "children": numberOfChildren,

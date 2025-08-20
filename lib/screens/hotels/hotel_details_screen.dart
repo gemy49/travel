@@ -1,42 +1,26 @@
-// lib/screens/hotels/hotel_details_screen.dart
-
-import 'dart:io';
-
-import 'package:FlyHigh/screens/SideMenu/chat_bot.dart';
 import 'package:flutter/material.dart';
-// Assuming HotelRoom is defined within hotel.dart or imported separately
-// import 'package:FlyHigh/models/hotel_room.dart'; // If separate
-import 'package:FlyHigh/models/hotel.dart';
-import 'package:FlyHigh/models/hotel_booking_data.dart'; // You'll need this model
-import 'package:provider/provider.dart';
+import 'package:FlyHigh/models/hotel.dart'; // Assuming Hotel model exists
+import 'package:FlyHigh/models/hotel_booking_data.dart';
 import 'package:url_launcher/url_launcher.dart';
-// Import your providers
-import '../../providers/hotel_provider.dart';
-import 'Hotel_payment.dart'; // Adjust path
+// Import your hotel provider if needed for fetching by ID
+import 'package:provider/provider.dart';
+import '../../providers/hotel_provider.dart'; // Adjust path
 
 class HotelDetailsScreen extends StatefulWidget {
-  // Accept either the full Hotel object OR just the ID
-  final Hotel? hotel; // Make hotel nullable
-  final int? hotelId; // Add hotelId parameter
+  // Accept either the full Hotel object, chat data, or just the ID
+  final Hotel? hotel;
+  final Map<String, dynamic>? chat; // Accept chat data
+  final int? hotelId; // Accept hotelId
 
-  const HotelDetailsScreen({super.key, this.hotel, this.hotelId})
-    : assert(
-        hotel != null || hotelId != null,
-        'Either hotel or hotelId must be provided',
-      ),
-      assert(
-        !(hotel != null && hotelId != null),
-        'Cannot provide both hotel and hotelId',
-      );
+  const HotelDetailsScreen({super.key, this.hotel, this.chat, this.hotelId});
 
   @override
   State<HotelDetailsScreen> createState() => _HotelDetailsScreenState();
 }
 
 class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
-  // State for the hotel data and loading state
-  Hotel? _hotel;
-  bool _isLoading = true;
+  Hotel? _localHotel; // Local variable to hold the hotel data
+  bool _isLoading = true; // Add loading state
   String _errorMessage = '';
   DateTime? _checkInDate;
   DateTime? _checkOutDate;
@@ -44,7 +28,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   late TextEditingController _checkOutDateController;
   final Color primaryColor = Colors.blue.shade500;
 
-  // State for room selection (as before)
+  // State for room selection
   Map<String, int> _selectedRoomQuantities = {};
 
   @override
@@ -55,15 +39,53 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     // Initialize date controllers
     _checkInDateController = TextEditingController();
     _checkOutDateController = TextEditingController();
+
+    // Determine the hotel data source
     if (widget.hotel != null) {
-      // If hotel object is provided directly, use it
-      _hotel = widget.hotel;
-      setState(() {
-        _isLoading = false;
-      });
+      _localHotel = widget.hotel;
+      _isLoading = false; // Data is ready
+    } else if (widget.chat != null) {
+      // Attempt to create a Hotel object from chat data
+      try {
+        // Map the chat data fields to your Hotel model fields
+        // Ensure keys match your API response structure
+        _localHotel = Hotel(
+          id: int.tryParse(widget.chat!['id']?.toString() ?? '') ?? 0,
+          name: widget.chat!['name']?.toString() ?? 'Unknown Hotel',
+          description: widget.chat!['description']?.toString() ?? 'No description available.',
+          image: widget.chat!['image']?.toString() ?? '',
+          city: widget.chat!['city']?.toString() ?? 'Unknown City',
+          lat: widget.chat!['lat']?.toString() ?? '',
+          lng: widget.chat!['lng']?.toString() ?? '',
+          rate: widget.chat!['rate'] is num ? widget.chat!['rate'].toDouble() : 0.0,
+          location: widget.chat!['location']?.toString() ?? 'Unknown Location',
+          // Safely handle the contact map
+          contact: widget.chat!['contact'] is Map<String, dynamic>
+              ? widget.chat!['contact'] as Map<String, dynamic>
+              : {},
+          onSale: widget.chat!['onSale'] as bool? ?? false,
+          // You might need to parse these lists from chat data if available
+          availableRooms: [],
+          amenities: [],
+        );
+        print("Hotel data extracted from chat: ${_localHotel!.name}");
+        _isLoading = false; // Data is ready
+      } catch (e, s) {
+        print("Error creating Hotel from chat data: $e\nStack: $s");
+        setState(() {
+          _errorMessage = 'Failed to process hotel data from chat.';
+          _isLoading = false;
+        });
+      }
     } else if (widget.hotelId != null) {
       // If only hotelId is provided, fetch the hotel data
       _fetchHotelById(widget.hotelId!);
+    } else {
+      // No data provided
+      setState(() {
+        _errorMessage = 'No hotel data provided.';
+        _isLoading = false;
+      });
     }
   }
 
@@ -75,7 +97,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
 
     try {
       // Access the HotelProvider
-      final hotelProvider = Provider.of<HotelProvider>(context, listen: false);
+      final hotelProvider =
+      Provider.of<HotelProvider>(context, listen: false);
 
       // Ensure hotels are loaded
       if (hotelProvider.hotels.isEmpty) {
@@ -84,13 +107,27 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
 
       // Find the hotel by ID
       final Hotel? foundHotel = hotelProvider.hotels.firstWhere(
-        (hotel) => hotel.id == id,
-      ); // Provide a default/fallback
+            (hotel) => hotel.id == id,
+        orElse: () => Hotel(
+          id: int.tryParse(widget.chat!['id']?.toString() ?? '') ?? 0,
+          name: widget.chat!['name']?.toString() ?? 'Unknown Hotel',
+          description: widget.chat!['description']?.toString() ?? 'No description available.',
+          image: widget.chat!['image']?.toString() ?? '', // Adjust path handling if needed
+          city: widget.chat!['city']?.toString() ?? 'Unknown City',
+          lat: widget.chat!['lat']?.toString() ?? '',
+          lng: widget.chat!['lng']?.toString() ?? '',
+          rate: widget.chat!['rate'] is num ? widget.chat!['rate'].toDouble() : 0.0,
+          location: widget.chat!['location']?.toString() ?? 'Unknown Location',
+          contact: widget.chat!['contact'] is Map<String, dynamic> ? widget.chat!['contact'] as Map<String, dynamic> : {},
+          onSale: widget.chat!['onSale'] ?? false,
+          availableRooms: widget.chat!['availableRooms'] ,
+          amenities: widget.chat!['amenities'] ,
+        ), // Return a default hotel if not found
+      );
 
       if (foundHotel != null && foundHotel.id != 0) {
-        // Assuming ID 0 means not found or empty
         setState(() {
-          _hotel = foundHotel;
+          _localHotel = foundHotel;
           _isLoading = false;
         });
       } else {
@@ -99,8 +136,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
           _isLoading = false;
         });
       }
-    } catch (error) {
-      print("Error fetching hotel by ID: $error");
+    } catch (error, stackTrace) {
+      print("Error fetching hotel by ID: $error\nStack: $stackTrace");
       setState(() {
         _errorMessage = 'Failed to load hotel details.';
         _isLoading = false;
@@ -108,7 +145,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     }
   }
 
-  // --- Room selection logic (as before) ---
+  // --- Room selection logic ---
   void _updateRoomQuantity(String roomType, int change) {
     setState(() {
       int currentQuantity = _selectedRoomQuantities[roomType] ?? 0;
@@ -122,34 +159,27 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     });
   }
 
-  // Inside the _HotelDetailsScreenState class
-
   /// Calculates the total price based on selected rooms and number of nights.
   double _calculateTotalPrice() {
-    if (_hotel == null) return 0.0;
+    if (_localHotel == null) return 0.0;
 
-    // --- Calculate number of nights ---
-    int numberOfNights =
-        1; // Default to 1 night if dates are not selected or invalid
+    int numberOfNights = 1;
     if (_checkInDate != null && _checkOutDate != null) {
-      // Calculate the difference in days
       numberOfNights = _checkOutDate!.difference(_checkInDate!).inDays;
-      // Ensure it's at least 1 night
       if (numberOfNights <= 0) {
         numberOfNights = 1;
       }
     }
-    // --- End calculate number of nights ---
 
     double total = 0.0;
     _selectedRoomQuantities.forEach((roomType, quantity) {
       if (quantity > 0) {
-        // Only calculate for rooms with quantity > 0
-        final room = _hotel!.availableRooms.firstWhere(
-          (r) => r.type == roomType,
-          orElse: () => availableRoom(type: roomType, price: 0, quantity: 0),
+        // Find the room in _localHotel's availableRooms
+        final room = _localHotel!.availableRooms.firstWhere(
+              (r) => r.type == roomType,
+          orElse: () =>
+              availableRoom(type: roomType, price: 0, quantity: 0), // Fallback
         );
-        // Multiply by price, quantity, and number of nights
         total += room.price * quantity * numberOfNights;
       }
     });
@@ -157,19 +187,19 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 
   List<Map<String, dynamic>> _getSelectedRoomsData() {
-    if (_hotel == null) return [];
+    if (_localHotel == null) return [];
     List<Map<String, dynamic>> selectedData = [];
     _selectedRoomQuantities.forEach((roomType, quantity) {
       if (quantity > 0) {
-        final room = _hotel!.availableRooms.firstWhere(
-          (r) => r.type == roomType,
+        final room = _localHotel!.availableRooms.firstWhere(
+              (r) => r.type == roomType,
           orElse: () => availableRoom(type: roomType, price: 0, quantity: 0),
         );
         selectedData.add({
           'type': roomType,
           'quantity': quantity,
           'pricePerNight': room.price,
-          'totalPriceForType': room.price * quantity,
+          // Note: This helper returns price for one night. Total price calculation happens in _calculateTotalPrice.
         });
       }
     });
@@ -177,7 +207,16 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
   }
 
   void _handleBooking(BuildContext context) {
-    if (_hotel == null) return;
+    if (_localHotel == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(_errorMessage.isEmpty
+                ? "Hotel data is missing."
+                : _errorMessage),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
     if (_checkInDate == null || _checkOutDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -187,9 +226,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       );
       return;
     }
-    final double totalPrice = _calculateTotalPrice();
+    // final double totalPrice = _calculateTotalPrice(); // Not needed here as HotelPaymentScreen can calculate
     final List<Map<String, dynamic>> selectedRoomsData =
-        _getSelectedRoomsData();
+    _getSelectedRoomsData();
 
     if (selectedRoomsData.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -201,75 +240,67 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
       return;
     }
 
+    // Create booking data object
     final bookingData = HotelBookingData(
-      hotel: _hotel!, // Use the fetched hotel
+      hotel: _localHotel!,
       selectedRooms: selectedRoomsData,
-      totalPrice: totalPrice,
+      totalPrice: _calculateTotalPrice(), // Pass calculated total
       checkInDate: _checkInDate!,
       checkOutDate: _checkOutDate!,
     );
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HotelPaymentScreen(bookingData: bookingData),
-      ),
-    );
+    // Navigate to payment screen
+    Navigator.pushNamed(context, '/Hotel_Payment', arguments: bookingData);
   }
 
   Future<void> openMap(String lat, String lng) async {
     final Uri googleMapsAppUrl = Uri.parse("comgooglemaps://?q=$lat,$lng");
-    final Uri googleMapsWebUrl = Uri.parse(
-      "https://www.google.com/maps/search/?api=1&query=$lat,$lng",
-    );
+    final Uri googleMapsWebUrl =
+    Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng");
 
-    // حاول يفتح تطبيق Google Maps أولًا
     if (await canLaunchUrl(googleMapsAppUrl)) {
       await launchUrl(googleMapsAppUrl, mode: LaunchMode.externalApplication);
-    }
-    // لو مش موجود افتح المتصفح
-    else {
+    } else if (await canLaunchUrl(googleMapsWebUrl)) {
+      // Fallback to web URL if app isn't available
       await launchUrl(googleMapsWebUrl, mode: LaunchMode.externalApplication);
+    } else {
+      // Handle case where neither can be launched (e.g., show snackbar)
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open map.')),
+        );
+      }
     }
-  } // Function to select check-in date
+  }
 
   Future<void> _selectCheckInDate(BuildContext context) async {
     final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _checkInDate ?? today,
+      firstDate: today,
+      lastDate: DateTime(today.year + 1),
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: primaryColor, // لون الهيدر والأزرار (OK, Cancel)
-              onPrimary: Colors.white, // لون النص في الهيدر
-              onSurface: Colors.black, // لون النصوص داخل الـ Calendar
+              primary: primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: primaryColor, // لون أزرار OK و CANCEL
-              ),
+              style: TextButton.styleFrom(foregroundColor: primaryColor),
             ),
           ),
           child: child!,
         );
       },
-
-      context: context,
-      initialDate:
-          _checkInDate ?? today, // Default to today or previously selected
-      firstDate: today, // Cannot select a past date
-      lastDate: DateTime(
-        today.year + 1,
-      ), // Allow selection up to a year in the future
     );
     if (picked != null && picked != _checkInDate) {
       setState(() {
         _checkInDate = picked;
-        // Format and display the selected date
         _checkInDateController.text =
-            "${picked.day}/${picked.month}/${picked.year}";
-
-        // If check-out date is before the new check-in date, reset check-out
+        "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
         if (_checkOutDate != null && _checkOutDate!.isBefore(_checkInDate!)) {
           _checkOutDate = null;
           _checkOutDateController.clear();
@@ -278,9 +309,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     }
   }
 
-  // Function to select check-out date
   Future<void> _selectCheckOutDate(BuildContext context) async {
-    // Ensure check-in date is selected first
     if (_checkInDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -292,76 +321,65 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     }
 
     final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate:
+      _checkOutDate ?? _checkInDate!.add(const Duration(days: 1)),
+      firstDate: _checkInDate!.add(const Duration(days: 1)),
+      lastDate: _checkInDate!.add(const Duration(days: 365)),
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: primaryColor, // لون الهيدر والأزرار (OK, Cancel)
-              onPrimary: Colors.white, // لون النص في الهيدر
-              onSurface: Colors.black, // لون النصوص داخل الـ Calendar
+              primary: primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: primaryColor, // لون أزرار OK و CANCEL
-              ),
+              style: TextButton.styleFrom(foregroundColor: primaryColor),
             ),
           ),
           child: child!,
         );
       },
-      context: context,
-      initialDate:
-          _checkOutDate ??
-          _checkInDate!.add(
-            const Duration(days: 1),
-          ), // Default to day after check-in
-      firstDate: _checkInDate!.add(
-        const Duration(days: 1),
-      ), // Must be after check-in
-      lastDate: _checkInDate!.add(
-        const Duration(days: 365),
-      ), // Allow up to a year stay
     );
     if (picked != null && picked != _checkOutDate) {
       setState(() {
         _checkOutDate = picked;
-        // Format and display the selected date
         _checkOutDateController.text =
-            "${picked.day}/${picked.month}/${picked.year}";
+        "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
 
+  @override
   void dispose() {
-    // Dispose of room selection related resources if any (as before)
-
-    // Dispose of date controllers
     _checkInDateController.dispose();
     _checkOutDateController.dispose();
-
     super.dispose();
   }
 
-  // --- UI Building (mostly as before, but using _hotel) ---
   @override
   Widget build(BuildContext context) {
-
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
-    if (_errorMessage.isNotEmpty || _hotel == null) {
+    // Handle error state
+    if (_errorMessage.isNotEmpty || _localHotel == null) {
       return Scaffold(
+        appBar: AppBar(title: const Text('Hotel Details')),
         body: Center(
-          child: Text(
-            _errorMessage.isEmpty ? 'Hotel data is missing.' : _errorMessage,
-          ),
+          child: Text(_errorMessage.isEmpty
+              ? 'Hotel data is missing.'
+              : _errorMessage),
         ),
       );
     }
 
-    // Use the fetched _hotel object
-    final hotel = _hotel!;
+    // Use the local hotel object
+    final hotel = _localHotel!;
 
     return Scaffold(
       backgroundColor: const Color(0xFFf5f5f5),
@@ -380,20 +398,25 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                   color: Colors.white,
                   shadows: [
                     Shadow(
-                      offset: Offset(1, 1),
-                      blurRadius: 3,
-                      color: Colors.black45,
-                    ),
+                        offset: Offset(1, 1),
+                        blurRadius: 3,
+                        color: Colors.black45)
                   ],
                 ),
               ),
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    "assets/Hotels/${hotel.image}",
-                    fit: BoxFit.cover,
-                  ),
+                  // Ensure the image path is correct relative to your assets
+                  Image.asset("assets/Hotels/${hotel.image}",
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Handle image loading errors
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.hotel, size: 100),
+                        );
+                      }),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -401,7 +424,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.7),
+                          Colors.black.withOpacity(0.7)
                         ],
                       ),
                     ),
@@ -416,17 +439,17 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Description Card
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 8,
+                            offset: const Offset(0, 2))
                       ],
                     ),
                     child: Padding(
@@ -434,28 +457,23 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Description',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor,
-                            ),
-                          ),
+                          Text('Description',
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor)),
                           const SizedBox(height: 8),
-                          Text(
-                            hotel.description,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              height: 1.5,
-                              color: Colors.black87,
-                            ),
-                          ),
+                          Text(hotel.description,
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  height: 1.5,
+                                  color: Colors.black87)),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
+                  // Location Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -463,11 +481,10 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 8,
+                            offset: const Offset(0, 2))
                       ],
                     ),
                     child: Column(
@@ -475,33 +492,24 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.location_on,
-                              color: primaryColor,
-                              size: 28,
-                            ),
+                            Icon(Icons.location_on,
+                                color: primaryColor, size: 28),
                             const SizedBox(width: 10),
-                            Text(
-                              hotel.city, // Or hotel.location if more specific
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
+                            Text(hotel.city,
+                                style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87)),
                             const Spacer(),
                             ElevatedButton.icon(
                               onPressed: () {
-                                // Use actual coordinates if available
                                 openMap(hotel.lat ?? "", hotel.lng ?? "");
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
+                                  backgroundColor: primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12))),
                               icon: const Icon(Icons.map, size: 18),
                               label: const Text("View on Map"),
                             ),
@@ -511,137 +519,111 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    "Select Rooms:",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
+                  // Room Selection Section
+                  Text("Select Rooms:",
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor)),
                   const SizedBox(height: 12),
-                  // Display available rooms with selection UI
-                  ...hotel.availableRooms.map((room) {
-                    final int selectedQuantity =
-                        _selectedRoomQuantities[room.type] ?? 0;
-                    return _buildRoomTypeCard(
-                      room,
-                      selectedQuantity,
-                      primaryColor,
-                    );
-                  }).toList(),
+                  // Display available rooms
+                  if (hotel.availableRooms.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text("Room information not available.",
+                          style: TextStyle(color: Colors.grey)),
+                    )
+                  else
+                    ...hotel.availableRooms.map((room) {
+                      final int selectedQuantity =
+                          _selectedRoomQuantities[room.type] ?? 0;
+                      return _buildRoomTypeCard(
+                          room, selectedQuantity, primaryColor);
+                    }).toList(),
                   const SizedBox(height: 10),
-                  // Display Total Price
-                  Text(
-                    "Select Dates:",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color:
-                          primaryColor, // Use the primary color defined earlier
-                    ),
-                  ),
+                  // Date Selection Section
+                  Text("Select Dates:",
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _checkInDateController,
-                          readOnly:
-                              true, // Make it read-only to force using the picker
+                          readOnly: true,
                           decoration: InputDecoration(
                             labelText: "Check-in Date",
                             labelStyle: TextStyle(color: primaryColor),
                             prefixIcon: const Icon(Icons.calendar_today),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
+                                borderRadius: BorderRadius.circular(10.0)),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 2.0,
-                              ),
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
+                                borderSide:
+                                BorderSide(color: primaryColor, width: 2.0),
+                                borderRadius: BorderRadius.circular(10.0)),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 2.0,
-                              ),
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
+                                borderSide:
+                                BorderSide(color: primaryColor, width: 2.0),
+                                borderRadius: BorderRadius.circular(10.0)),
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
-                          onTap: () => _selectCheckInDate(
-                            context,
-                          ), // Open date picker on tap
+                          onTap: () => _selectCheckInDate(context),
                         ),
                       ),
                       const SizedBox(width: 15),
                       Expanded(
                         child: TextField(
                           controller: _checkOutDateController,
-                          readOnly:
-                              true, // Make it read-only to force using the picker
+                          readOnly: true,
                           decoration: InputDecoration(
                             labelText: "Check-out Date",
                             labelStyle: TextStyle(color: primaryColor),
-                            prefixIcon: const Icon(
-                              Icons.calendar_today_outlined,
-                            ),
+                            prefixIcon:
+                            const Icon(Icons.calendar_today_outlined),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
+                                borderRadius: BorderRadius.circular(10.0)),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 2.0,
-                              ),
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
+                                borderSide:
+                                BorderSide(color: primaryColor, width: 2.0),
+                                borderRadius: BorderRadius.circular(10.0)),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 2.0,
-                              ),
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
+                                borderSide:
+                                BorderSide(color: primaryColor, width: 2.0),
+                                borderRadius: BorderRadius.circular(10.0)),
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
-                          onTap: () => _selectCheckOutDate(
-                            context,
-                          ), // Open date picker on tap
+                          onTap: () => _selectCheckOutDate(context),
                         ),
                       ),
                     ],
                   ),
                   if (_checkInDate != null && _checkOutDate != null)
                     Builder(
-                      // Use Builder to access context if needed inside the logic
                       builder: (context) {
-                        final int nights = _checkOutDate!
-                            .difference(_checkInDate!)
-                            .inDays;
+                        final int nights =
+                            _checkOutDate!.difference(_checkInDate!).inDays;
                         if (nights > 0) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: Text(
-                              'Stay Duration: $nights Night${nights > 1 ? 's' : ''}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: primaryColor, // Use your primary color
-                              ),
-                            ),
+                                'Stay Duration: $nights Night${nights > 1 ? 's' : ''}',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: primaryColor)),
                           );
                         } else {
-                          return const SizedBox.shrink(); // Return empty widget if nights <= 0
+                          return const SizedBox.shrink();
                         }
                       },
                     ),
                   const SizedBox(height: 15),
+                  // Total Price Display
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -651,46 +633,40 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        Text('Total:',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: primaryColor)),
                         Text(
-                          'Total:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
-                        Text(
-                          '\$${_calculateTotalPrice().toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
+                            '\$${_calculateTotalPrice().toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87)),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    "Amenities:",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
+                  // Amenities Section
+                  if (hotel.amenities.isNotEmpty) ...[
+                    Text("Amenities:",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: hotel.amenities
+                          .map((amenity) =>
+                          _buildAmenityChip(amenity, primaryColor))
+                          .toList(),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: hotel.amenities
-                        .map(
-                          (amenity) => _buildAmenityChip(amenity, primaryColor),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
+                  ],
+                  // Rating Section
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -698,99 +674,84 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 8,
+                            offset: const Offset(0, 2))
                       ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Rating:',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
+                        Text('Rating:',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: primaryColor)),
                         const SizedBox(height: 8),
                         Row(
                           children: [
                             ...List.generate(5, (index) {
                               if (index < hotel.rate.floor()) {
-                                return const Icon(
-                                  Icons.star,
-                                  color: Colors.amber,
-                                  size: 30,
-                                );
+                                return const Icon(Icons.star,
+                                    color: Colors.amber, size: 30);
                               } else if (index < hotel.rate &&
                                   hotel.rate - index >= 0.5) {
-                                return const Icon(
-                                  Icons.star_half,
-                                  color: Colors.amber,
-                                  size: 30,
-                                );
+                                return const Icon(Icons.star_half,
+                                    color: Colors.amber, size: 30);
                               } else {
-                                return const Icon(
-                                  Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 30,
-                                );
+                                return const Icon(Icons.star_border,
+                                    color: Colors.amber, size: 30);
                               }
                             }),
                             const SizedBox(width: 10),
-                            Text(
-                              hotel.rate.toStringAsFixed(1),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
+                            Text(hotel.rate.toStringAsFixed(1),
+                                style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87)),
                           ],
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Container(
-                    height: 60,
+                  // Book Now Button
+                  SizedBox(
                     width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [primaryColor, primaryColor.withOpacity(0.7)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
+                    height: 60,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            colors: [
+                              primaryColor,
+                              primaryColor.withOpacity(0.7)
+                            ],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                              color: primaryColor.withOpacity(0.4),
+                              spreadRadius: 2,
+                              blurRadius: 8,
+                              offset: const Offset(0, 4))
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: primaryColor.withOpacity(0.4),
-                          spreadRadius: 2,
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                      child: ElevatedButton(
+                        onPressed: () => _handleBooking(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          padding: EdgeInsets.zero, // Important for gradient
                         ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: () => _handleBooking(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: const Text(
-                        'Book Now',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                        child: const Text('Book Now',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white)),
                       ),
                     ),
                   ),
@@ -804,25 +765,22 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
     );
   }
 
-  // --- Helper Widgets (as before, using local variables) ---
+  // --- Helper Widgets ---
   Widget _buildRoomTypeCard(
-    dynamic room,
-    int selectedQuantity,
-    Color primaryColor,
-  ) {
+      dynamic room, int selectedQuantity, Color primaryColor) {
+    // Ensure room is of the correct type (e.g., availableRoom) and has necessary properties
     return Container(
-      margin: const EdgeInsets.only(bottom: 15), // Space between room cards
+      margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: primaryColor), // Rounded corners
+        border: Border.all(color: primaryColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1), // Subtle shadow
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 1))
         ],
       ),
       child: Padding(
@@ -830,82 +788,60 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Room Type Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  room.type,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor, // Use primary color for the type
-                  ),
-                ),
-                // Display available quantity
-
+                Text(room.type,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor)),
+                // Display available quantity if needed from room.quantity
+                Text("Available: ${room.quantity}",
+                    style: const TextStyle(color: Colors.grey)),
               ],
             ),
             const SizedBox(height: 5),
-            // Price per Night
-            Text(
-              '\$${room.price.toStringAsFixed(2)} per night',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
+            Text('\$${room.price.toStringAsFixed(2)} per night',
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87)),
             const SizedBox(height: 5),
-            // Quantity Selector
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Quantity:",
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
+                const Text("Quantity:",
+                    style: TextStyle(fontWeight: FontWeight.w500)),
                 Row(
                   children: [
-                    // Minus Button
                     IconButton(
-                      icon: Icon(
-                        Icons.remove_circle_outline,
-                        color: selectedQuantity > 0
-                            ? primaryColor
-                            : Colors.grey,
-                      ),
+                      icon: Icon(Icons.remove_circle_outline,
+                          color:
+                          selectedQuantity > 0 ? primaryColor : Colors.grey),
                       onPressed: selectedQuantity > 0
                           ? () {
-                              _updateRoomQuantity(room.type, -1);
-                            }
-                          : null, // Disable if quantity is 0
+                        _updateRoomQuantity(room.type, -1);
+                      }
+                          : null,
                     ),
-                    // Quantity Display
                     Container(
                       width: 40,
                       alignment: Alignment.center,
-                      child: Text(
-                        '$selectedQuantity',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Text('$selectedQuantity',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
-                    // Plus Button
                     IconButton(
-                      icon: Icon(
-                        Icons.add_circle_outline,
-                        color: selectedQuantity < room.quantity
-                            ? primaryColor
-                            : Colors.grey, // Disable if max quantity reached
-                      ),
-                      onPressed: selectedQuantity < room.quantity
+                      icon: Icon(Icons.add_circle_outline,
+                          color: selectedQuantity < (room.quantity ?? 100)
+                              ? primaryColor
+                              : Colors.grey), // Assume max 100 if not specified
+                      onPressed: selectedQuantity < (room.quantity ?? 100)
                           ? () {
-                              _updateRoomQuantity(room.type, 1);
-                            }
-                          : null, // Disable if max quantity reached
+                        _updateRoomQuantity(room.type, 1);
+                      }
+                          : null,
                     ),
                   ],
                 ),
@@ -930,53 +866,15 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
         children: [
           const Icon(Icons.check_circle, color: Colors.black45, size: 16),
           const SizedBox(width: 4),
-          Text(
-            amenity,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(amenity,
+              style:
+              const TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 }
 
-Widget _buildContactItem({
-  required IconData icon,
-  required String label,
-  required String value,
-  required Color primaryColor,
-  VoidCallback? onTap, // Optional: Make it tappable
-}) {
-  return InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(8), // Add tap feedback
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Icon(icon, color: primaryColor, size: 20),
-          const SizedBox(width: 12),
-          Text(
-            '$label:',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          // Optional: Add an arrow icon to indicate it's tappable
-          if (onTap != null)
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-        ],
-      ),
-    ),
-  );
-}
-// --- End of new
+// Remove the standalone _buildContactItem widget if it's not used within this screen's build method.
+// If it is used, make sure it's correctly placed and called.
+// Widget _buildContactItem({...}) {...}

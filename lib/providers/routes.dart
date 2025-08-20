@@ -50,12 +50,10 @@ class RouteGenerator {
             builder: (_) => HotelDetailsScreen(hotelId: args),
           );
         } else if (args is Map<String, dynamic>) {
-          final int? hotelId = args['id'] as int?;
-          if (hotelId != null) {
             return MaterialPageRoute(
-              builder: (_) => HotelDetailsScreen(hotelId: hotelId),
+              builder: (_) => HotelDetailsScreen(chat: args),
             );
-          }
+
         }
         print('RouteGenerator: Invalid arguments for /hotel-details: $args');
         return _errorRoute();
