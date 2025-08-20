@@ -11,7 +11,7 @@ import '../models/hotel.dart';
 import '../models/weather.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.1.100:3000/api';
+  final String baseUrl = 'http://192.168.100.10:3000/api';
 
   // ===== Helper to get stored userId =====
   Future<int?> _getUserId() async {
