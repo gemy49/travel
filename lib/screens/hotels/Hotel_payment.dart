@@ -14,7 +14,7 @@ class HotelPaymentScreen extends StatefulWidget {
   final HotelBookingData bookingData;
 
   const HotelPaymentScreen({Key? key, required this.bookingData})
-    : super(key: key);
+      : super(key: key);
 
   @override
   State<HotelPaymentScreen> createState() => _HotelPaymentScreenState();
@@ -30,17 +30,18 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
+  // Controllers for credit card information
   final TextEditingController _cardNumberController = TextEditingController();
   final TextEditingController _expiryDateController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
   final TextEditingController _cardHolderNameController =
-      TextEditingController();
+  TextEditingController();
 
   late final Hotel hotel;
   late final List<Map<String, dynamic>> selectedRooms;
   late final double totalPrice;
-  late final DateTime CheckInDate;
-  late final DateTime CheckOutDate;
+  late final DateTime checkInDate;
+  late final DateTime checkOutDate;
 
   bool _isBookingInProgress = false;
 
@@ -50,19 +51,27 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
     hotel = widget.bookingData.hotel;
     selectedRooms = widget.bookingData.selectedRooms;
     totalPrice = widget.bookingData.totalPrice;
-    CheckInDate = widget.bookingData.checkInDate;
-    CheckOutDate = widget.bookingData.checkOutDate;
+    checkInDate = widget.bookingData.checkInDate;
+    checkOutDate = widget.bookingData.checkOutDate;
   }
 
   Future<void> _saveHotelBookingToLocalStorage({String? debugId}) async {
     try {
+      // Get the user-specific key for hotel bookings
       final String? userKey = await getUserSpecificKey('hotel_bookings');
-      if (userKey == null) return;
+      if (userKey == null) {
+        print("HotelPaymentScreen: User key is null, cannot save booking.");
+        return; // Or handle the error appropriately
+      }
 
       final prefs = await SharedPreferences.getInstance();
+
+      // Retrieve existing bookings for this user
       final List<String> existingHotelBookingsJson =
           prefs.getStringList(userKey) ?? [];
 
+      // Create a map representing the booking data
+      // Ensure only serializable types (like primitives, Lists, Maps) are used
       final Map<String, dynamic> hotelBookingDataMap = {
         'hotel': {
           'id': hotel.id,
@@ -72,20 +81,34 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
           'rate': hotel.rate,
           'image': hotel.image,
           'description': hotel.description,
+          // Add other necessary hotel fields if needed, ensuring they are serializable
         },
         'selectedRooms': selectedRooms,
         'totalPrice': totalPrice,
+        'checkInDate': checkInDate.toIso8601String(), // Convert DateTime to String
+        'checkOutDate': checkOutDate.toIso8601String(), // Convert DateTime to String
+        // Add a timestamp or debugId for uniqueness if needed
+        'bookingTimestamp': DateTime.now().toIso8601String(),
+        if (debugId != null) 'debugId': debugId,
       };
 
+      // Encode the map to a JSON string
       final String newHotelBookingJson = jsonEncode(hotelBookingDataMap);
+
+      // Add the new booking JSON string to the list
       existingHotelBookingsJson.add(newHotelBookingJson);
+
+      // Save the updated list back to SharedPreferences
       await prefs.setStringList(userKey, existingHotelBookingsJson);
-    } catch (e) {
+      print("HotelPaymentScreen: Booking saved to local storage with key: $userKey");
+    } catch (e, s) {
+      print("HotelPaymentScreen: Error saving hotel booking to local storage: $e\nStack: $s");
       _showSnackBar("Error saving hotel booking: $e", isError: true);
     }
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return; // Check if the widget is still in the tree
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -148,6 +171,16 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                       "Location",
                       hotel.city,
                     ),
+                    _buildHotelDetailRow(
+                      Icons.calendar_today,
+                      "Check-in",
+                      "${checkInDate.day}/${checkInDate.month}/${checkInDate.year}",
+                    ),
+                    _buildHotelDetailRow(
+                      Icons.calendar_today_outlined,
+                      "Check-out",
+                      "${checkOutDate.day}/${checkOutDate.month}/${checkOutDate.year}",
+                    ),
                     const SizedBox(height: 10),
                     const Text(
                       "Selected Rooms:",
@@ -155,17 +188,33 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                     ),
                     const SizedBox(height: 5),
                     ...selectedRooms.map((roomData) {
+                      // Ensure keys exist in roomData
+                      final type = roomData['type'] ?? 'Unknown Room';
+                      final quantity = roomData['quantity'] ?? 0;
+
+                      final totalPriceForType = roomData['totalPriceForType'] ??
+                          (roomData['pricePerNight'] ?? 0) * quantity;
+                      final nights = checkOutDate.difference(checkInDate).inDays;
+                      final pricePerNight =
+                      nights > 0 ? totalPriceForType / quantity / nights : 0;
+
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 4.0),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "${roomData['quantity']} x ${roomData['type']}",
+                            Row(
+                              children: [
+                                Text(
+                                  "$quantity x $type",
+                                ),
+                                const Spacer(),
+                                Text(
+                                  "\$${totalPriceForType.toStringAsFixed(2)}",
+                                ),
+                              ],
                             ),
-                            const Spacer(),
-                            Text(
-                              "\$${roomData['totalPriceForType'].toStringAsFixed(2)}",
-                            ),
+
                           ],
                         ),
                       );
@@ -192,7 +241,7 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                       labelText: "Full Name",
                       prefixIcon: Icons.person,
                       validator: (value) =>
-                          value!.isEmpty ? 'Please enter your name' : null,
+                      value!.trim().isEmpty ? 'Please enter your name' : null,
                     ),
                     const SizedBox(height: 15),
                     _buildUserInfoField(
@@ -201,10 +250,13 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                       prefixIcon: Icons.email,
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value!.isEmpty) return 'Please enter your email';
+                        final trimmedValue = value!.trim();
+                        if (trimmedValue.isEmpty) {
+                          return 'Please enter your email';
+                        }
                         if (!RegExp(
                           r"^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$",
-                        ).hasMatch(value)) {
+                        ).hasMatch(trimmedValue)) {
                           return 'Please enter a valid email';
                         }
                         return null;
@@ -216,7 +268,7 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                       labelText: "Phone Number",
                       prefixIcon: Icons.phone,
                       keyboardType: TextInputType.phone,
-                      validator: (value) => value!.isEmpty
+                      validator: (value) => value!.trim().isEmpty
                           ? 'Please enter your phone number'
                           : null,
                     ),
@@ -239,6 +291,7 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                         LengthLimitingTextInputFormatter(16),
                         TextInputFormatter.withFunction((oldValue, newValue) {
                           String text = newValue.text.replaceAll(' ', '');
+                          if (text.length > 16) text = text.substring(0, 16);
                           String newText = '';
                           for (int i = 0; i < text.length; i++) {
                             if (i % 4 == 0 && i != 0) newText += ' ';
@@ -253,8 +306,10 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                         }),
                       ],
                       validator: (value) {
-                        if (value!.isEmpty) return 'Enter card number';
-                        if (value.replaceAll(' ', '').length < 16) {
+                        final cleanedValue =
+                        value!.replaceAll(RegExp(r'\s+'), '');
+                        if (cleanedValue.isEmpty) return 'Enter card number';
+                        if (cleanedValue.length != 16) {
                           return 'Card number must be 16 digits';
                         }
                         return null;
@@ -275,13 +330,19 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                               ),
                               LengthLimitingTextInputFormatter(5),
                               TextInputFormatter.withFunction((
-                                oldValue,
-                                newValue,
-                              ) {
+                                  oldValue,
+                                  newValue,
+                                  ) {
                                 String text = newValue.text;
+                                // Prevent adding more than one slash
                                 if (text.length == 2 &&
-                                    oldValue.text.length < text.length) {
+                                    oldValue.text.length < text.length &&
+                                    !text.contains('/')) {
                                   text += '/';
+                                }
+                                // Ensure only one slash and correct format
+                                if (text.length > 5) {
+                                  text = text.substring(0, 5);
                                 }
                                 return TextEditingValue(
                                   text: text,
@@ -298,6 +359,25 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                               ).hasMatch(value)) {
                                 return 'Invalid format (MM/YY)';
                               }
+                              // Optional: Check if the date is not in the past
+                              // This requires parsing the MM/YY string
+                              try {
+                                final parts = value.split('/');
+                                final month = int.parse(parts[0]);
+                                final year = int.parse(parts[1]);
+                                final now = DateTime.now();
+                                // Assuming YY is for 20XX if YY > current year % 100, else 21XX?
+                                // Let's assume 20XX for simplicity, adjust as needed.
+                                final fullYear = 2000 + year;
+                                if (fullYear < now.year ||
+                                    (fullYear == now.year &&
+                                        month < now.month)) {
+                                  return 'Card is expired';
+                                }
+                              } catch (e) {
+                                // If parsing fails, let the format validation handle it
+                                // or return a generic error if preferred.
+                              }
                               return null;
                             },
                           ),
@@ -312,13 +392,17 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                             obscureText: true,
                             validator: (value) {
                               if (value!.isEmpty) return 'Enter CVV';
-                              if (value.length != 3) {
-                                return 'CVV must be 3 digits';
+                              if (value.length != 3 &&
+                                  value.length != 4) { // Some cards have 4 digit CVV
+                                return 'CVV must be 3 or 4 digits';
+                              }
+                              if (!RegExp(r'^\d+$').hasMatch(value)) {
+                                return 'CVV must be numeric';
                               }
                               return null;
                             },
                             inputFormatters: [
-                              LengthLimitingTextInputFormatter(3),
+                              LengthLimitingTextInputFormatter(4), // Allow up to 4
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                           ),
@@ -330,8 +414,9 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                       controller: _cardHolderNameController,
                       labelText: "Cardholder Name",
                       prefixIcon: Icons.account_circle,
-                      validator: (value) =>
-                          value!.isEmpty ? 'Enter cardholder name' : null,
+                      validator: (value) => value!.trim().isEmpty
+                          ? 'Enter cardholder name'
+                          : null,
                     ),
                   ],
                 ),
@@ -344,76 +429,113 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                   onPressed: _isBookingInProgress
                       ? null
                       : () async {
-                          if (_formKey.currentState!.validate()) {
-                            final String debugId = DateTime.now()
-                                .millisecondsSinceEpoch
-                                .toString();
-                            setState(() => _isBookingInProgress = true);
+                    if (_formKey.currentState!.validate()) {
+                      final String debugId = DateTime.now()
+                          .millisecondsSinceEpoch
+                          .toString();
+                      setState(() => _isBookingInProgress = true);
 
-                            try {
-                              for (var room in selectedRooms) {
-                                await ApiService().bookRoom(
-                                  id: hotel.id,
-                                  roomType: room['type'],
-                                  quantity: room['quantity'],
-                                );
-                              }
+                      try {
+                        // 1. Book rooms via API
+                        for (var room in selectedRooms) {
+                          final roomType = room['type'] as String;
+                          final quantity = room['quantity'] as int;
+                          print(
+                              "HotelPaymentScreen: Attempting to book $quantity of $roomType for hotel ID ${hotel.id}");
+                          await ApiService().bookRoom(
+                            id: hotel.id,
+                            roomType: roomType,
+                            quantity: quantity,
+                          );
+                          print(
+                              "HotelPaymentScreen: Successfully booked $quantity of $roomType");
+                        }
 
-                              await ApiService().addHotelBookingForUser(
-                                bookingData: {
-                                  "bookingId": DateTime.now()
-                                      .millisecondsSinceEpoch
-                                      .toString(),
-                                  "hotelId": hotel.id,
-                                  "hotelName": hotel.name,
-                                  "city": hotel.city,
-                                  "rooms": selectedRooms
-                                      .map(
-                                        (room) => {
-                                          "type": room['type'],
-                                          "count": room['quantity'],
-                                        },
-                                      )
-                                      .toList(),
-                                  "totalCost": totalPrice,
-                                  "fullName": _nameController.text.trim(),
-                                  "phone": _phoneController.text.trim(),
-                                  "bookingDate": DateTime.now()
-                                      .toIso8601String(),
-                                  "checkIn": CheckInDate.toString(),
-                                  "checkOut": CheckOutDate.toString(),
-                                },
-                              );
+                        // 2. Add hotel booking record for the user via API
+                        final bookingDataForApi = {
+                          "bookingId": DateTime.now()
+                              .millisecondsSinceEpoch
+                              .toString(),
+                          "hotelId": hotel.id,
+                          "hotelName": hotel.name,
+                          "city": hotel.city,
+                          "rooms": selectedRooms
+                              .map(
+                                (room) => {
+                              "type": room['type'],
+                              "count": room['quantity'],
+                            },
+                          )
+                              .toList(),
+                          "totalCost": totalPrice,
+                          "fullName": _nameController.text.trim(),
+                          "phone": _phoneController.text.trim(),
+                          "email": _emailController.text.trim(),
+                          "bookingDate": DateTime.now().toIso8601String(),
+                          "checkIn":
+                          checkInDate.toIso8601String(), // Use correct variable
+                          "checkOut":
+                          checkOutDate.toIso8601String(), // Use correct variable
+                        };
+                        print(
+                            "HotelPaymentScreen: Sending booking data to API: $bookingDataForApi");
+                        await ApiService()
+                            .addHotelBookingForUser(
+                            bookingData: bookingDataForApi);
+                        print(
+                            "HotelPaymentScreen: Successfully added booking record via API");
 
-                              await _saveHotelBookingToLocalStorage(
-                                debugId: debugId,
-                              );
+                        // 3. Save booking to local storage
+                        await _saveHotelBookingToLocalStorage(
+                          debugId: debugId,
+                        );
 
-                              _showSnackBar(
-                                "Booking confirmed for ${hotel.name} & saved",
-                                isError: false,
-                              );
+                        // 4. Show success message
+                        _showSnackBar(
+                          "Booking confirmed for ${hotel.name} & saved locally!",
+                          isError: false,
+                        );
 
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                '/BottomNavigationBar',
-                                (route) => false,
-                              );
-                            } catch (error) {
-                              _showSnackBar(
-                                "Booking failed: $error",
-                                isError: true,
-                              );
-                            } finally {
-                              final hotelProvider = Provider.of<HotelProvider>(
-                                context,
-                                listen: false,
-                              );
-                              await hotelProvider.fetchHotels();
-                              setState(() => _isBookingInProgress = false);
-                            }
-                          }
-                        },
+                        // 5. Navigate to a success screen or back to main
+                        // Using pushNamedAndRemoveUntil to clear the booking/payment stack
+                        if (context.mounted) {
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/BottomNavigationBar', // Ensure this route exists
+                                (route) => false, // Remove all previous routes
+                          );
+                        }
+                      } catch (error, stackTrace) {
+                        print(
+                            "HotelPaymentScreen: Booking process failed: $error\nStack Trace: $stackTrace");
+                        if (context.mounted) {
+                          _showSnackBar(
+                            "Booking failed: ${error.toString().contains('SocketException') || error.toString().contains('HandshakeException') ? 'Network error. Please check your connection.' : error.toString()}",
+                            isError: true,
+                          );
+                        }
+                      } finally {
+                        // Refresh hotel data (e.g., available rooms) - optional but good practice
+                        try {
+                          final hotelProvider =
+                          Provider.of<HotelProvider>(
+                            context,
+                            listen: false,
+                          );
+                          await hotelProvider.fetchHotels();
+                          print(
+                              "HotelPaymentScreen: Hotel data refreshed after booking attempt.");
+                        } catch (refreshError) {
+                          print(
+                              "HotelPaymentScreen: Failed to refresh hotel data: $refreshError");
+                        }
+                        // Re-enable the button
+                        if (mounted) {
+                          setState(() => _isBookingInProgress = false);
+                        }
+                      }
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     foregroundColor: Colors.white,
@@ -421,21 +543,23 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                       borderRadius: BorderRadius.circular(defaultBorderRadius),
                     ),
                     elevation: 3,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 12.0), // Add padding
                   ),
                   icon: _isBookingInProgress
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.white,
+                      ),
+                    ),
+                  )
                       : const Icon(Icons.check_circle, size: 24),
                   label: Text(
-                    _isBookingInProgress ? "Processing..." : "Confirm Booking ",
+                    _isBookingInProgress ? "Processing..." : "Confirm Booking",
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -488,12 +612,12 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
   }
 
   Widget _buildHotelDetailRow(
-    IconData icon,
-    String label,
-    String value, {
-    bool isBold = false,
-    bool isTotal = false,
-  }) {
+      IconData icon,
+      String label,
+      String value, {
+        bool isBold = false,
+        bool isTotal = false,
+      }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(

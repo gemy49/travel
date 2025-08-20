@@ -14,6 +14,9 @@ import 'package:FlyHigh/screens/Start/forgot_password_screen.dart';
 import 'package:FlyHigh/screens/Start/reset_password_screen.dart';
 import 'package:FlyHigh/screens/Start/loginScreen.dart';
 
+import '../models/hotel_booking_data.dart';
+import '../screens/hotels/Hotel_payment.dart';
+
 class RouteGenerator {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     print('RouteGenerator: Attempting to generate route for ${settings.name}');
@@ -98,6 +101,16 @@ class RouteGenerator {
         }
         print('RouteGenerator: Invalid arguments for /Flight_Payment: $args');
         return _errorRoute();
+      case '/Hotel_Payment': // Make sure this matches the string used in Navigator.pushNamed
+        final args = settings.arguments;
+        if (args is HotelBookingData) {
+          print('RouteGenerator: Navigating to Hotel_Payment with HotelBookingData');
+          return MaterialPageRoute(
+            builder: (_) => HotelPaymentScreen(bookingData: args), // Use your actual screen widget name
+          );
+        }
+        print('RouteGenerator: Invalid arguments for /Hotel_Payment: $args. Expected HotelBookingData.');
+        return _errorRoute(); // Return error route if arguments are incorrect
 
       case '/my-flights':
         return MaterialPageRoute(builder: (_) => const MyFlightsScreen());
