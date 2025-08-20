@@ -57,7 +57,6 @@ class RouteGenerator {
         }
         print('RouteGenerator: Invalid arguments for /hotel-details: $args');
         return _errorRoute();
-
       case '/Flight_Payment':
         final args = settings.arguments;
         if (args is FlightBookingData) {

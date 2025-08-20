@@ -65,8 +65,9 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
               : {},
           onSale: widget.chat!['onSale'] as bool? ?? false,
           // You might need to parse these lists from chat data if available
-          availableRooms: [],
-          amenities: [],
+          availableRooms: widget.chat!['availableRooms'] is List<dynamic> ? List<availableRoom>.from(widget.chat!['availableRooms'].map((room) => availableRoom.fromJson(room as Map<String, dynamic>))) : [],
+          amenities: widget.chat!['amenities'] is List<dynamic> ? List<String>.from(widget.chat!['amenities']) : [],
+
         );
         print("Hotel data extracted from chat: ${_localHotel!.name}");
         _isLoading = false; // Data is ready
@@ -120,8 +121,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
           location: widget.chat!['location']?.toString() ?? 'Unknown Location',
           contact: widget.chat!['contact'] is Map<String, dynamic> ? widget.chat!['contact'] as Map<String, dynamic> : {},
           onSale: widget.chat!['onSale'] ?? false,
-          availableRooms: widget.chat!['availableRooms'] ,
-          amenities: widget.chat!['amenities'] ,
+          availableRooms: widget.chat!['availableRooms'] is List<dynamic> ? List<availableRoom>.from(widget.chat!['availableRooms'].map((room) => availableRoom.fromJson(room as Map<String, dynamic>))) : [],
+          amenities: widget.chat!['amenities'] is List<dynamic> ? List<String>.from(widget.chat!['amenities']) : [],
         ), // Return a default hotel if not found
       );
 
@@ -242,7 +243,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
 
     // Create booking data object
     final bookingData = HotelBookingData(
-      hotel: _localHotel!,
+      hotel: _localHotel!as Hotel,
       selectedRooms: selectedRoomsData,
       totalPrice: _calculateTotalPrice(), // Pass calculated total
       checkInDate: _checkInDate!,
@@ -797,8 +798,7 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen> {
                         fontWeight: FontWeight.bold,
                         color: primaryColor)),
                 // Display available quantity if needed from room.quantity
-                Text("Available: ${room.quantity}",
-                    style: const TextStyle(color: Colors.grey)),
+
               ],
             ),
             const SizedBox(height: 5),
