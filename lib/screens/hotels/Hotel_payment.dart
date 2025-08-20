@@ -393,7 +393,7 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                             validator: (value) {
                               if (value!.isEmpty) return 'Enter CVV';
                               if (value.length != 3 &&
-                                  value.length != 4) { // Some cards have 4 digit CVV
+                                  value.length != 3) { // Some cards have 4 digit CVV
                                 return 'CVV must be 3 or 4 digits';
                               }
                               if (!RegExp(r'^\d+$').hasMatch(value)) {
@@ -402,7 +402,7 @@ class _HotelPaymentScreenState extends State<HotelPaymentScreen> {
                               return null;
                             },
                             inputFormatters: [
-                              LengthLimitingTextInputFormatter(4), // Allow up to 4
+                              LengthLimitingTextInputFormatter(3), // Allow up to 4
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                           ),

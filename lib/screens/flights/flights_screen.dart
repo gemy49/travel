@@ -18,6 +18,8 @@ class _FlightsScreenState extends State<FlightsScreen> {
   String _fromQuery = '';
   String _toQuery = '';
   DateTime? _startDate;
+  final Color primaryColor = Colors.blue.shade500;
+
 
   // عدد العناصر التي ستظهر في البداية
   int _itemsToShow = 20;
@@ -44,6 +46,21 @@ class _FlightsScreenState extends State<FlightsScreen> {
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: primaryColor),
+            ),
+          ),
+          child: child!,
+        );
+      },
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),

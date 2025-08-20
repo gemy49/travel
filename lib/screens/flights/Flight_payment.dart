@@ -265,12 +265,30 @@ class _PaymentDetailsScreenState extends State<Flight_Payment> {
                               }),
                             ],
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Enter expiry date';
-                              }
-                              final regex = RegExp(r'^(0[1-9]|1[0-2])\/\d{2}$');
-                              if (!regex.hasMatch(value)) {
+                              if (value!.isEmpty) return 'Enter expiry date';
+                              if (!RegExp(
+                                r'^(0[1-9]|1[0-2])\/\d{2}$',
+                              ).hasMatch(value)) {
                                 return 'Invalid format (MM/YY)';
+                              }
+                              // Optional: Check if the date is not in the past
+                              // This requires parsing the MM/YY string
+                              try {
+                                final parts = value.split('/');
+                                final month = int.parse(parts[0]);
+                                final year = int.parse(parts[1]);
+                                final now = DateTime.now();
+                                // Assuming YY is for 20XX if YY > current year % 100, else 21XX?
+                                // Let's assume 20XX for simplicity, adjust as needed.
+                                final fullYear = 2000 + year;
+                                if (fullYear < now.year ||
+                                    (fullYear == now.year &&
+                                        month < now.month)) {
+                                  return 'Card is expired';
+                                }
+                              } catch (e) {
+                                // If parsing fails, let the format validation handle it
+                                // or return a generic error if preferred.
                               }
                               return null;
                             },

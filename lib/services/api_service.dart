@@ -396,7 +396,7 @@ class ApiService {
   Future<WeatherResponse> getWeatherForecast(String city) async {
     final apiKey = 'fe929c8b878144e880e225611231508';
     final url = Uri.parse(
-      'https://api.weatherapi.com/v1/forecast.json?key=$apiKey&q=$city&days=3&aqi=no&alerts=no',
+      'https://api.weatherapi.com/v1/forecast.json?key=$apiKey&q=cairo&days=3&aqi=no&alerts=no',
     );
 
     final response = await http.get(url);

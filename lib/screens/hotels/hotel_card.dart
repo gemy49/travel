@@ -96,7 +96,7 @@ class HotelCard extends StatelessWidget {
                   Text(
                     'Price: (${_formatPriceRange(price)})',
                     style: TextStyle(
-                      color: Colors.black,
+                      color: Colors.green,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

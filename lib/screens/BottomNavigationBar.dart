@@ -122,10 +122,10 @@ class _BottomnavigationbarState extends State<Bottomnavigationbar> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(123, 68, 255, 93),
+                  backgroundColor:  Colors.red,
                 ),
                 onPressed: () => Navigator.of(context).pop(true),
-                child: Text("Yes"),
+                child: Text("Yes",style: TextStyle(color: Colors.white),),
               ),
             ],
           ),
